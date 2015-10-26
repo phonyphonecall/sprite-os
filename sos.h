@@ -7,6 +7,7 @@
 #include "interrupt.h"
 #include "input.h"
 #include "uart.h"
+#include "graphics.h"
 
 #define SOS_ERR (-1)
 

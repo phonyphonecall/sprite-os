@@ -22,7 +22,7 @@ cb_node cb_array[NUM_CALLBACKS];
 
 extern void microblaze_enable_interrupts(void);
 
-inline void sos_enable_mb_interrupts(void) {
+void sos_enable_mb_interrupts() {
     microblaze_enable_interrupts();
 }
 
@@ -58,7 +58,7 @@ void sos_disable_vsync_cb(sos_cb_id_t id) {
         cb_array[id].enabled = false;
 }
 
-inline void clear_pic_interrupt(void) {
+void clear_pic_interrupt() {
     SET_ADDR(PIC_INTERRUPT_ACK_ADDR, PIC_VSYNC_MASK);
 }
 
