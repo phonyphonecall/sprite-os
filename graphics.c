@@ -5,20 +5,20 @@
 
 void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     struct vram_set {
-        unsigned int p_data  : 4;
-        unsigned int _res    : 7;
-        unsigned int pixel_x : 6;
-        unsigned int pixel_y : 6;
         unsigned int chunk   : 9;
+        unsigned int pixel_y : 6;
+        unsigned int pixel_x : 6;
+        unsigned int _res    : 7;
+        unsigned int p_data  : 4;
     };
     union vram_converter {
         uint32_t val;
         struct vram_set set;
     };
 
-    for (unsigned int x = 0; x < GRANDE_WIDTH; x++) {
-        for (unsigned int y = 0; y < GRANDE_HEIGHT; y++) {
-            uint8_t color = color_indecies[(x * GRANDE_HEIGHT) + y];
+    for (unsigned int y = 0; y < GRANDE_HEIGHT; y++) {
+        for (unsigned int x = 0; x < GRANDE_WIDTH; x++) {
+            uint8_t color = color_indecies[(y * GRANDE_HEIGHT) + x];
             struct vram_set set = {
                 .p_data = color,
                 ._res = 0,
