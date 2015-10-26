@@ -21,7 +21,7 @@ void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies);
 void sos_vram_load_vrende_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
 void sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
 
-void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette[]);
+void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette);
 
 void sos_oam_set(uint8_t entry_num,
                     bool enable,
