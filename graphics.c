@@ -1,7 +1,8 @@
 #include "graphics.h"
 
-#define VRAM_BASE_ADDR (0xA0000800)
+#define OAM_BASE_ADDR (0xA0000000)
 #define CRAM_BASE_ADDR (0xA0000400)
+#define VRAM_BASE_ADDR (0xA0000800)
 
 void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     struct vram_set {
@@ -72,15 +73,43 @@ void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette) {
     }
 }
 // 
-// void sos_oam_set(uint8_t entry_num,
-//                     bool enable,
-//                     uint8_t palette_num,
-//                     bool flip_y,
-//                     bool flip_x,
-//                     uint16_t x_offset,
-//                     uint16_t y_offset)
-// {
-// }
+void sos_oam_set(uint8_t entry_num,
+                    bool enable,
+                    uint8_t palette_num,
+                    bool flip_y,
+                    bool flip_x,
+                    uint16_t x_offset,
+                    uint16_t y_offset)
+{
+    uint32_t oam_offset = entry_num * 4;
+    struct oam_set {
+        unsigned int en         : 1;
+        unsigned int _res0      : 1;
+        unsigned int palette    : 6;
+        unsigned int _res1      : 2;
+        unsigned int flip_y     : 1;
+        unsigned int flip_x     : 1;
+        unsigned int x_offset   : 10;
+        unsigned int _res2      : 1;
+        unsigned int y_offset   : 9;
+    };
+    union oam_converter {
+        uint32_t val;
+        struct oam_set set;
+    };
+    struct oam_set set = {
+        .en       = enable,
+        .palette  = palette_num,
+        .flip_y   = flip_y,
+        .flip_x   = flip_x,
+        .x_offset = x_offset,
+        .y_offset = y_offset
+    };
+    union oam_converter conv = {
+        .set = set
+    };
+    SET_ADDR((OAM_BASE_ADDR + oam_offset), conv.val);
+}
 // 
 // void sos_oam_inst_set(uint8_t entry_num,
 //                         bool enable,
