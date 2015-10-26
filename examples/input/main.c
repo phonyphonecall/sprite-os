@@ -1,4 +1,4 @@
-#include "general.h"
+#include "sos.h"
 
 void uart_printf(char *string) {
     static char* std_out_map = (char*) 0x83e00000 + 0x1000;

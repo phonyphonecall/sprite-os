@@ -1,4 +1,4 @@
-#include "general.h"
+#include "sos.h"
 #include "interrupt.h"
 
 // HW specific registers and masks

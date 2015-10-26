@@ -1,7 +1,7 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "general.h"
+#include "sos.h"
 
 typedef uint32_t sos_input_id_t;
 
