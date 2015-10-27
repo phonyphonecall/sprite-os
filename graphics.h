@@ -23,7 +23,20 @@ void sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
 
 void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette);
 
+
 void sos_oam_set(uint8_t entry_num,
+                    bool enable,
+                    uint8_t palette_num,
+                    bool flip_y,
+                    bool flip_x,
+                    uint16_t x_offset,
+                    uint16_t y_offset);
+
+#define ENABLE_DONT_CHANGE  ((bool) 0xFF)
+#define PALETTE_DONT_CHANGE ((uint8_t) 0xFF)
+#define FLIP_DONT_CHANGE    ((bool) 0xFF)
+#define OFFSET_DONT_CHANGE  ((uint16_t) 0xFFFF)
+void sos_oam_update(uint8_t entry_num,
                     bool enable,
                     uint8_t palette_num,
                     bool flip_y,
