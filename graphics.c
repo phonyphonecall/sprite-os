@@ -73,21 +73,6 @@ void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette) {
     }
 }
 
-struct oam_set {
-    unsigned int en         : 1;
-    unsigned int _res0      : 1;
-    unsigned int palette    : 6;
-    unsigned int _res1      : 2;
-    unsigned int flip_y     : 1;
-    unsigned int flip_x     : 1;
-    unsigned int x_offset   : 10;
-    unsigned int _res2      : 1;
-    unsigned int y_offset   : 9;
-};
-union oam_converter {
-    uint32_t val;
-    struct oam_set set;
-};
 
 void sos_oam_set(uint8_t entry_num,
                     bool enable,
@@ -109,40 +94,6 @@ void sos_oam_set(uint8_t entry_num,
     union oam_converter conv = {
         .set = set
     };
-    SET_ADDR((OAM_BASE_ADDR + oam_offset), conv.val);
-}
-
-
-void sos_oam_update(uint8_t entry_num,
-                    bool enable,
-                    uint8_t palette_num,
-                    bool flip_y,
-                    bool flip_x,
-                    uint16_t x_offset,
-                    uint16_t y_offset)
-{
-    uint32_t oam_offset = entry_num * 4;
-    union oam_converter conv = {
-        .val = GET_ADDR((OAM_BASE_ADDR + oam_offset))
-    };
-    if (enable != ENABLE_DONT_CHANGE) {
-        conv.set.en = enable;
-    }
-    if (palette_num != PALETTE_DONT_CHANGE) {
-        conv.set.palette = palette_num;
-    }
-    if (flip_y != FLIP_DONT_CHANGE) {
-        conv.set.flip_y = flip_y;
-    }
-    if (flip_x != FLIP_DONT_CHANGE) {
-        conv.set.flip_x = flip_x;
-    }
-    if (x_offset != OFFSET_DONT_CHANGE) {
-        conv.set.x_offset = x_offset;
-    }
-    if (y_offset != OFFSET_DONT_CHANGE) {
-        conv.set.y_offset = y_offset;
-    }
     SET_ADDR((OAM_BASE_ADDR + oam_offset), conv.val);
 }
 
