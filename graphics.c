@@ -74,14 +74,12 @@ void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette) {
 }
 
 // OAM QUEUEING
-
 void oam_queue_worker(void* args) {
-    // sos_uart_printf("updating oam\n");
     for (int i = 0; i < _NUM_OAM; i++) {
-        _flagged_word reg = _oam_regs[i];
-        if (reg.changed) {
-            SET_ADDR((OAM_BASE_ADDR + (i * 4)), reg.word);
-            reg.changed = false;
+        _flagged_word *reg = &_oam_regs[i];
+        if (reg->changed == true) {
+            SET_ADDR((OAM_BASE_ADDR + (i * 4)), reg->word);
+            reg->changed = false;
         }
     }
     // TODO: Write out instance
