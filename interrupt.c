@@ -21,9 +21,14 @@ int cb_count = 0;
 cb_node cb_array[NUM_CALLBACKS];
 
 extern void microblaze_enable_interrupts(void);
+extern void microblaze_disable_interrupts(void);
 
 void sos_enable_mb_interrupts() {
     microblaze_enable_interrupts();
+}
+
+void sos_disable_mb_interrupts() {
+    microblaze_disable_interrupts();
 }
 
 void sos_enable_vsync_interrupt(char* str) {
