@@ -3,11 +3,14 @@
 
 #include "stdbool.h"
 #include "stdint.h"
+#include "string.h"
 
 #include "interrupt.h"
 #include "input.h"
 #include "uart.h"
 #include "graphics.h"
+
+#include "user.h"
 
 #define SOS_ERR (-1)
 

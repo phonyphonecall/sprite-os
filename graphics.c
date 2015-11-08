@@ -73,6 +73,26 @@ void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette) {
     }
 }
 
+// OAM QUEUEING
+
+void oam_queue_worker(void* args) {
+    // sos_uart_printf("updating oam\n");
+    for (int i = 0; i < _NUM_OAM; i++) {
+        _flagged_word reg = _oam_regs[i];
+        if (reg.changed) {
+            SET_ADDR((OAM_BASE_ADDR + (i * 4)), reg.word);
+            reg.changed = false;
+        }
+    }
+    // TODO: Write out instance
+}
+
+void _sos_init_oam_queue() {
+    memset((void*) _oam_regs, 0, sizeof(_oam_regs));
+    memset((void*) _oam_inst_regs, 0, sizeof(_oam_inst_regs));
+    sos_register_vsync_cb(oam_queue_worker, 0, true);
+}
+
 
 void sos_oam_set(uint8_t entry_num,
                     bool enable,
@@ -82,8 +102,7 @@ void sos_oam_set(uint8_t entry_num,
                     uint16_t x_offset,
                     uint16_t y_offset)
 {
-    uint32_t oam_offset = entry_num * 4;
-    struct oam_set set = {
+    struct _oam_set set = {
         .en       = enable,
         .palette  = palette_num,
         .flip_y   = flip_y,
@@ -91,10 +110,11 @@ void sos_oam_set(uint8_t entry_num,
         .x_offset = x_offset,
         .y_offset = y_offset
     };
-    union oam_converter conv = {
+    union _oam_converter conv = {
         .set = set
     };
-    SET_ADDR((OAM_BASE_ADDR + oam_offset), conv.val);
+    _oam_regs[entry_num].changed = true;
+    _oam_regs[entry_num].word = conv.val;
 }
 
 // 

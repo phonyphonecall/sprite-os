@@ -11,7 +11,6 @@
 
 #define PALETTE_SIZE (15)
 
-
 #define SPRITE_GRANDE (0x0)
 #define SPRITE_TALL   (0x1)
 #define SPRITE_VRENDE (0x2)
@@ -21,9 +20,10 @@
 #define CRAM_BASE_ADDR (0xA0000400)
 #define VRAM_BASE_ADDR (0xA0000800)
 
-
-
-struct oam_set {
+// Private datastructures needed publicly by the update macro
+#define _NUM_OAM 124
+#define _NUM_INST_OAM 64
+struct _oam_set {
     unsigned int en         : 1;
     unsigned int _res0      : 1;
     unsigned int palette    : 6;
@@ -34,17 +34,33 @@ struct oam_set {
     unsigned int _res2      : 1;
     unsigned int y_offset   : 9;
 };
-union oam_converter {
+union _oam_converter {
     uint32_t val;
-    struct oam_set set;
+    struct _oam_set set;
 };
 
+typedef struct _flagged_word {
+    bool changed;
+    uint32_t word;
+} _flagged_word;
+
+typedef struct _flagged_double_word {
+    bool changed;
+    uint32_t word1;
+    uint32_t word2;
+} _flagged_double_word;
+
+// Holds current diff state of oam
+_flagged_word _oam_regs[_NUM_OAM];
+_flagged_double_word _oam_inst_regs[_NUM_INST_OAM];
+
+
+// Public API's
 void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies);
-void sos_vram_load_vrende_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
-void sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
+// void sos_vram_load_vrende_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
+// void sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
 
 void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette);
-
 
 void sos_oam_set(uint8_t entry_num,
                     bool enable,
@@ -55,25 +71,19 @@ void sos_oam_set(uint8_t entry_num,
                     uint16_t y_offset);
 
 // OAM update macros
-// ex: update x and y offsets
-// SOS_OAM_UPDATE(0x04,
-//      SOS_OAM_OFFSET_X = 45;
-//      SOS_OAM_OFFSET_Y = 52;
-// );
 #define SOS_OAM_ENABLE      conv.set.en
 #define SOS_OAM_PALETTE     conv.set.palette
 #define SOS_OAM_FLIP_X      conv.set.flip_x
 #define SOS_OAM_FLIP_Y      conv.set.flip_y
 #define SOS_OAM_OFFSET_X    conv.set.x_offset
 #define SOS_OAM_OFFSET_Y    conv.set.y_offset
-
-#define SOS_OAM_UPDATE(entry_num, updates) do {\
-        uint32_t oam_offset = entry_num * 4;\
-        union oam_converter conv = {\
-            .val = GET_ADDR((OAM_BASE_ADDR + oam_offset))\
+#define sos_oam_update(entry_num, updates) do {\
+        union _oam_converter conv = {\
+            .val = _oam_regs[entry_num].word\
         };\
         updates\
-        SET_ADDR((OAM_BASE_ADDR + oam_offset), conv.val);\
+        _oam_regs[entry_num].changed = true;\
+        _oam_regs[entry_num].word = conv.val;\
     } while (0)
 
 void sos_oam_set_inst(uint8_t entry_num,
@@ -86,6 +96,9 @@ void sos_oam_set_inst(uint8_t entry_num,
                         uint8_t size,
                         uint8_t sprite_index,
                         bool transpose);
+
+// internal functions
+void _sos_init_oam_queue(void);
 
 #endif //GRAPHICS_H
 
