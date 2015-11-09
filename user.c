@@ -28,21 +28,45 @@ typedef struct player_t {
     uint8_t side;
     short  paddle_y;
     short  paddle_surface;
+    bool up;
+    bool down;
 } player_t;
 
 player_t p1 = {
-    .mode = MODE_AI,
+    .mode = MODE_HUMAN,
     .side = LEFT_SIDE,
     .paddle_y = SCREEN_Y_MIN,
-    .paddle_surface = LEFT_PADDLE_SURFACE
+    .paddle_surface = LEFT_PADDLE_SURFACE,
+    .up = false,
+    .down = false
 };
 
 player_t p2 = {
-    .mode = MODE_HUMAN,
+    .mode = MODE_AI,
     .side = RIGHT_SIDE,
     .paddle_y = SCREEN_Y_MIN,
-    .paddle_surface = RIGHT_PADDLE_SURFACE
+    .paddle_surface = RIGHT_PADDLE_SURFACE,
+    .up = false,
+    .down = false
 };
+
+void get_input(void* data) {
+    player_t *player = (player_t*) data;
+
+    sos_input_state_t state;
+    sos_input_id_t id = sos_get_input_id(player->side);
+
+    sos_fill_input_state(id, &state);
+    player->up = state.up;
+    player->down = state.down;
+
+    if (state.up) {
+        sos_uart_printf("up pressed\n");
+    }
+    if (state.down) {
+        sos_uart_printf("down pressed\n");
+    }
+}
 
 
 short ball_x = 256;
@@ -51,7 +75,15 @@ short ball_dx = 1;
 short ball_dy = 1;
 
 void player_human_logic(player_t* player) {
-    // TODO
+    if (player->up) {
+        if (player->paddle_y >= 0) {
+            player->paddle_y -= 1;
+        }
+    } else if (player->down) {
+        if (player->paddle_y <= SCREEN_Y_MAX) {
+            player->paddle_y += 1;
+        }
+    }
 }
 
 void player_ai_logic(player_t* player) {
@@ -150,8 +182,8 @@ void check_hit(void* data) {
 }
 
 
-
-sos_cb_id_t cb_ids[6];
+#define NUM_CBS 8
+sos_cb_id_t cb_ids[NUM_CBS];
 
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
@@ -167,12 +199,14 @@ void sos_user_game_init() {
     sos_oam_set(PADDLE_2_OAM, true, 0x02, false, false, SCREEN_X_MAX, (uint16_t)  p2.paddle_y);
 
     // Register callbacks
-    cb_ids[0] = sos_register_vsync_cb(ball_update, 0, true);
-    cb_ids[1] = sos_register_vsync_cb(player_logic, &p1, true);
-    cb_ids[2] = sos_register_vsync_cb(player_logic, &p2, true);
-    cb_ids[3] = sos_register_vsync_cb(paddle_update, 0, true);
-    cb_ids[4] = sos_register_vsync_cb(check_hit, &p1, true);
-    cb_ids[5] = sos_register_vsync_cb(check_hit, &p2, true);
+    cb_ids[0] = sos_register_vsync_cb(get_input, &p1, true);
+    cb_ids[1] = sos_register_vsync_cb(get_input, &p2, true);
+    cb_ids[2] = sos_register_vsync_cb(ball_update, 0, true);
+    cb_ids[3] = sos_register_vsync_cb(player_logic, &p1, true);
+    cb_ids[4] = sos_register_vsync_cb(player_logic, &p2, true);
+    cb_ids[5] = sos_register_vsync_cb(paddle_update, 0, true);
+    cb_ids[6] = sos_register_vsync_cb(check_hit, &p1, true);
+    cb_ids[7] = sos_register_vsync_cb(check_hit, &p2, true);
     sos_uart_printf("user init done\n");
 }
 
@@ -181,7 +215,7 @@ void sos_user_game_tick() {
     int useless = 0;
     if (game_over) {
         sos_uart_printf("game over\n");
-        for (sos_cb_id_t *cb_id = &cb_ids[0]; cb_id <= &cb_ids[5]; cb_id++) {
+        for (sos_cb_id_t *cb_id = &cb_ids[0]; cb_id <= &cb_ids[NUM_CBS - 1]; cb_id++) {
             sos_disable_vsync_cb(*cb_id);
         }
         while (1) {
