@@ -33,7 +33,7 @@ typedef struct player_t {
 } player_t;
 
 player_t p1 = {
-    .mode = MODE_HUMAN,
+    .mode = MODE_AI,
     .side = LEFT_SIDE,
     .paddle_y = SCREEN_Y_MIN,
     .paddle_surface = LEFT_PADDLE_SURFACE,
