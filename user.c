@@ -76,11 +76,11 @@ short ball_dy = 3;
 
 void player_human_logic(player_t* player) {
     if (player->up) {
-        if (player->paddle_y >= 0) {
+        if (player->paddle_y > 0) {
             player->paddle_y -= 3;
         }
     } else if (player->down) {
-        if (player->paddle_y <= SCREEN_Y_MAX) {
+        if (player->paddle_y < SCREEN_Y_MAX) {
             player->paddle_y += 3;
         }
     }
