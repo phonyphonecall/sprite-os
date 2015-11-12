@@ -153,17 +153,15 @@ void check_hit(void* data) {
         ((player->side == RIGHT_SIDE) && (ball_x >= player->paddle_surface))) {
         short dy = 0;
         short diff = ball_y - player->paddle_y;
-        if (INCLUSIVE_BETWEEN(diff, 46, 64)) {
+        if (INCLUSIVE_BETWEEN(diff, 26, 64)) {
             dy = 3;
-        } else if (INCLUSIVE_BETWEEN(diff, 11, 45)) {
+        } else if (INCLUSIVE_BETWEEN(diff, 6, 26)) {
             dy = 2;
-        } else if (INCLUSIVE_BETWEEN(diff, 0, 10)) {
+        } else if (INCLUSIVE_BETWEEN(diff, -5, 5)) {
             dy = 1;
-        } else if (INCLUSIVE_BETWEEN(diff, -10, 1)) {
-            dy = 1;
-        } else if (INCLUSIVE_BETWEEN(diff, -45, -11)) {
+        } else if (INCLUSIVE_BETWEEN(diff, -26, -6)) {
             dy = 2;
-        } else if (INCLUSIVE_BETWEEN(diff, -64, -46)) {
+        } else if (INCLUSIVE_BETWEEN(diff, -64, -26)) {
             dy = 3;
         } else {
             if (player->side == LEFT_SIDE) {
