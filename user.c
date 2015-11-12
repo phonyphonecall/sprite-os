@@ -33,7 +33,7 @@ typedef struct player_t {
 } player_t;
 
 player_t p1 = {
-    .mode = MODE_AI,
+    .mode = MODE_HUMAN,
     .side = LEFT_SIDE,
     .paddle_y = SCREEN_Y_MIN,
     .paddle_surface = LEFT_PADDLE_SURFACE,
@@ -71,26 +71,26 @@ void get_input(void* data) {
 
 short ball_x = 256;
 short ball_y = 256;
-short ball_dx = 1;
-short ball_dy = 1;
+short ball_dx = 3;
+short ball_dy = 3;
 
 void player_human_logic(player_t* player) {
     if (player->up) {
         if (player->paddle_y >= 0) {
-            player->paddle_y -= 1;
+            player->paddle_y -= 3;
         }
     } else if (player->down) {
         if (player->paddle_y <= SCREEN_Y_MAX) {
-            player->paddle_y += 1;
+            player->paddle_y += 3;
         }
     }
 }
 
 void player_ai_logic(player_t* player) {
-    if (player->paddle_y > ball_y) {
-        player->paddle_y -= 1;
-    } else if (player->paddle_y < ball_y) {
-        player->paddle_y += 1;
+    if (player->paddle_y  + 20 > ball_y) {
+        player->paddle_y -= 2;
+    } else if (player->paddle_y  - 20 < ball_y) {
+        player->paddle_y += 2;
     }
 }
 
@@ -113,7 +113,7 @@ void paddle_update(void* data) {
 }
 
 int frame_count = 0;
-int frame_limit = 3;
+int frame_limit = 1;
 void ball_update(void* data) {
     frame_count++;
     if (frame_limit == frame_count) {
