@@ -87,10 +87,14 @@ void player_human_logic(player_t* player) {
 }
 
 void player_ai_logic(player_t* player) {
-    if (player->paddle_y  + 20 > ball_y) {
+    if (player->paddle_y + 20 > ball_y) {
         player->paddle_y -= 2;
-    } else if (player->paddle_y  - 20 < ball_y) {
+    } else if (player->paddle_y - 20 < ball_y) {
         player->paddle_y += 2;
+    }else if (player->paddle_y > ball_y) {
+        player->paddle_y -= 1;
+    } else if (player->paddle_y < ball_y) {
+        player->paddle_y += 1;
     }
 }
 
