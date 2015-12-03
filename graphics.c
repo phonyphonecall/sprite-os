@@ -4,6 +4,9 @@
 #define CRAM_BASE_ADDR (0xA0000400)
 #define VRAM_BASE_ADDR (0xA0000800)
 
+#define BG_CHUNK_START  (0xC0)
+#define BG_CHUNK_END    (0x10B)
+
 void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     struct vram_set {
         unsigned int chunk   : 9;
@@ -35,13 +38,15 @@ void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     }
 }
 
-
-
-
-
 // sos_vram_load_vrende_chunk(uint16_t chunk_num, uint8_t *color_indecies[VRENDE_CHUNK_SIZE]);
 // sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[VENTI_CHUNK_SIZE]);
-// 
+
+void sos_vram_load_bg(uint8_t *color_indecies) {
+    for (uint16_t i = 0; i < (BG_CHUNK_END - BG_CHUNK_START); i += 1) {
+        sos_vram_load_grande_chunk((i + BG_CHUNK_START), &color_indecies[i * 64 * 64]);
+    }
+}
+
 void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette) {
     // turn ID into byte offset
     uint32_t cram_offset = palette_num * 4;
@@ -92,7 +97,7 @@ void _sos_init_oam_queue() {
 }
 
 
-void sos_oam_set(uint8_t entry_num,
+void sos_oam_set(uint16_t entry_num,
                     bool enable,
                     uint8_t palette_num,
                     bool flip_y,
