@@ -1,10 +1,12 @@
 #include "user.h"
 #include "pong_ball.h"
 #include "pong_paddle.h"
+#include "duck_bg.h"
 
 #define BALL_OAM (0x00)
 #define PADDLE_1_OAM (0x01)
 #define PADDLE_2_OAM (0x02)
+#define BG_OAM (0x7A)
 
 #define SCREEN_X_MIN (0)
 #define SCREEN_Y_MIN (0)
@@ -193,12 +195,18 @@ void sos_user_game_init() {
     sos_vram_load_grande_chunk(0x10 + PADDLE_1_OAM, ((uint8_t*) pong_paddle));
     sos_vram_load_grande_chunk(0x10 + PADDLE_2_OAM, ((uint8_t*) pong_paddle));
 
+    sos_uart_printf("starting bg load\n");
+    sos_vram_load_bg(((uint8_t*) duck_bg));
+    sos_uart_printf("bg load done\n");
+
     sos_cram_load_palette(0x01, pong_ball_palette);
     sos_cram_load_palette(0x02, pong_paddle_palette);
+    sos_cram_load_palette(0x03, duck_bg_palette);
 
     sos_oam_set(BALL_OAM, true, 0x01, false, false, 256, 256);
     sos_oam_set(PADDLE_1_OAM, true, 0x02, false, true, SCREEN_X_MIN, (uint16_t) p1.paddle_y);
     sos_oam_set(PADDLE_2_OAM, true, 0x02, false, false, SCREEN_X_MAX, (uint16_t)  p2.paddle_y);
+    sos_oam_set(BG_OAM, true, 0x03, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
 
     // Register callbacks
     cb_ids[0] = sos_register_vsync_cb(get_input, &p1, true);
