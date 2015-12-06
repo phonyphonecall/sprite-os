@@ -1,5 +1,5 @@
 #include "user.h"
-#include "pong_ball.h"
+#include "duck1.h"
 #include "pong_paddle.h"
 #include "duck_bg.h"
 
@@ -191,7 +191,7 @@ sos_cb_id_t cb_ids[NUM_CBS];
 
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
-    sos_vram_load_grande_chunk(0x10, ((uint8_t*) pong_ball));
+    sos_vram_load_grande_chunk(0x10, ((uint8_t*) duck1));
     sos_vram_load_grande_chunk(0x10 + PADDLE_1_OAM, ((uint8_t*) pong_paddle));
     sos_vram_load_grande_chunk(0x10 + PADDLE_2_OAM, ((uint8_t*) pong_paddle));
 
@@ -199,7 +199,7 @@ void sos_user_game_init() {
     sos_vram_load_bg(((uint8_t*) duck_bg));
     sos_uart_printf("bg load done\n");
 
-    sos_cram_load_palette(0x01, pong_ball_palette);
+    sos_cram_load_palette(0x01, duck1_palette);
     sos_cram_load_palette(0x02, pong_paddle_palette);
     sos_cram_load_palette(0x03, duck_bg_palette);
 
