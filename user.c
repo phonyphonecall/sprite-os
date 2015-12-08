@@ -33,28 +33,26 @@ bool game_over = false;
 typedef struct player_t {
     uint8_t mode;
     uint8_t side;
-    short  paddle_y;
-    short  paddle_surface;
-    bool up;
-    bool down;
+    bool left;
+    bool right;
+    uint16_t x;
+    uint8_t oam_id;
 } player_t;
 
 player_t p1 = {
     .mode = MODE_HUMAN,
     .side = LEFT_SIDE,
-    .paddle_y = SCREEN_Y_MIN,
-    .paddle_surface = LEFT_PADDLE_SURFACE,
-    .up = false,
-    .down = false
+    .left = false,
+    .right = false,
+    .x = 80
 };
 
 player_t p2 = {
     .mode = MODE_AI,
     .side = RIGHT_SIDE,
-    .paddle_y = SCREEN_Y_MIN,
-    .paddle_surface = RIGHT_PADDLE_SURFACE,
-    .up = false,
-    .down = false
+    .left = false,
+    .right = false,
+    .x = (SCREEN_X_MAX - 80 - 64)
 };
 
 void get_input(void* data) {
@@ -64,15 +62,34 @@ void get_input(void* data) {
     sos_input_id_t id = sos_get_input_id(player->side);
 
     sos_fill_input_state(id, &state);
-    player->up = state.up;
-    player->down = state.down;
+    player->left = state.left;
+    player->right = state.right;
 
-    if (state.up) {
-        sos_uart_printf("up pressed\n");
+    if (state.left) {
+        sos_uart_printf("left pressed\n");
     }
-    if (state.down) {
-        sos_uart_printf("down pressed\n");
+    if (state.right) {
+        sos_uart_printf("right pressed\n");
     }
+}
+
+void player_update(void* data) {
+    player_t *p = (player_t*) data;
+    if (p->left && p->right) {
+        // do nothing
+    } else if (p->left) {
+        if (p->x < (SCREEN_X_MAX - 64))
+            p->x += 2;
+    } else if (p->right) {
+        if (p->x > 0)
+            p->x -= 2;
+    } else {
+        // do nothing
+    }
+    // Update OAM
+    sos_oam_update(p->oam_id,
+        SOS_OAM_OFFSET_X = (uint16_t) p->x;
+    );
 }
 
 
@@ -186,14 +203,24 @@ void sos_user_game_init() {
                         ((uint8_t*) duck2));
         sos_vram_load_grande_chunk(0x10 + ducks[i].oam_id_horiz_3,
                         ((uint8_t*) duck3));
-            sos_oam_set(ducks[i].oam_id_horiz_1,
-                            false, 0x04, false, false, SCREEN_X_MIN, 80);
-            sos_oam_set(ducks[i].oam_id_horiz_2,
-                            false, 0x05, false, false, SCREEN_X_MIN, 80);
-            // offset 10px up to align duck head
-            sos_oam_set(ducks[i].oam_id_horiz_3,
-                            false, 0x06, false, false, SCREEN_X_MIN, 80 - 10);
+        sos_oam_set(ducks[i].oam_id_horiz_1,
+                        false, 0x04, false, false, SCREEN_X_MIN, 80);
+        sos_oam_set(ducks[i].oam_id_horiz_2,
+                        false, 0x05, false, false, SCREEN_X_MIN, 80);
+        // offset 10px up to align duck head
+        sos_oam_set(ducks[i].oam_id_horiz_3,
+                        false, 0x06, false, false, SCREEN_X_MIN, 80 - 10);
     }
+
+    // load player oam
+    // p1
+    p1.oam_id = (NUM_DUCKS * 3 + 1);
+    sos_vram_load_grande_chunk(0x10 + (p1.oam_id), ((uint8_t*) duck1));
+    sos_oam_set(p1.oam_id, true, 0x04, false, false, p1.x, (SCREEN_Y_MAX - 64));
+    // p2
+    p2.oam_id = p1.oam_id + 1;
+    sos_vram_load_grande_chunk(0x10 + (p2.oam_id), ((uint8_t*) duck1));
+    sos_oam_set(p2.oam_id, true, 0x04, false, false, p2.x, (SCREEN_Y_MAX - 64));
 
     // bg vram/oam
     sos_uart_printf("starting bg load\n");
@@ -203,9 +230,18 @@ void sos_user_game_init() {
 
 
     // Register callbacks
-    for (int i = 0; i < NUM_DUCKS; i++) {
+    int i;
+    for (i = 0; i < NUM_DUCKS; i++) {
         cb_ids[i] = sos_register_vsync_cb(duck_update, &ducks[i], true);
     }
+    i++;
+    cb_ids[i] = sos_register_vsync_cb(get_input, &p1, true);
+    i++;
+    cb_ids[i] = sos_register_vsync_cb(get_input, &p2, true);
+    i++;
+    cb_ids[i] = sos_register_vsync_cb(player_update, &p1, true);
+    i++;
+    cb_ids[i] = sos_register_vsync_cb(player_update, &p2, true);
     sos_uart_printf("user init done\n");
 }
 
