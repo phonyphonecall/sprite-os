@@ -5,9 +5,6 @@
 #include "pong_paddle.h"
 #include "duck_bg.h"
 
-// #define BALL_OAM (0x00)
-#define PADDLE_1_OAM (0x01)
-#define PADDLE_2_OAM (0x02)
 #define DUCK_HRZ_1 (0x03)
 #define DUCK_HRZ_2 (0x04)
 #define DUCK_HRZ_3 (0x05)
@@ -18,62 +15,28 @@
 #define SCREEN_X_MAX (640 - 64 - 1)
 #define SCREEN_Y_MAX (480 - 64 - 1)
 
-#define MODE_HUMAN (0)
-#define MODE_AI    (1)
-
 #define LEFT_SIDE  (0)
 #define RIGHT_SIDE (1)
 
-#define PADDLE_THICKNESS (13)
-#define LEFT_PADDLE_SURFACE (PADDLE_THICKNESS)
-#define RIGHT_PADDLE_SURFACE (SCREEN_X_MAX - PADDLE_THICKNESS)
-
 bool game_over = false;
 
-typedef struct player_t {
-    uint8_t mode;
-    uint8_t side;
-    short  paddle_y;
-    short  paddle_surface;
-    bool up;
-    bool down;
-} player_t;
-
-player_t p1 = {
-    .mode = MODE_HUMAN,
-    .side = LEFT_SIDE,
-    .paddle_y = SCREEN_Y_MIN,
-    .paddle_surface = LEFT_PADDLE_SURFACE,
-    .up = false,
-    .down = false
-};
-
-player_t p2 = {
-    .mode = MODE_AI,
-    .side = RIGHT_SIDE,
-    .paddle_y = SCREEN_Y_MIN,
-    .paddle_surface = RIGHT_PADDLE_SURFACE,
-    .up = false,
-    .down = false
-};
-
-void get_input(void* data) {
-    player_t *player = (player_t*) data;
-
-    sos_input_state_t state;
-    sos_input_id_t id = sos_get_input_id(player->side);
-
-    sos_fill_input_state(id, &state);
-    player->up = state.up;
-    player->down = state.down;
-
-    if (state.up) {
-        sos_uart_printf("up pressed\n");
-    }
-    if (state.down) {
-        sos_uart_printf("down pressed\n");
-    }
-}
+// void get_input(void* data) {
+//     player_t *player = (player_t*) data;
+// 
+//     sos_input_state_t state;
+//     sos_input_id_t id = sos_get_input_id(player->side);
+// 
+//     sos_fill_input_state(id, &state);
+//     player->up = state.up;
+//     player->down = state.down;
+// 
+//     if (state.up) {
+//         sos_uart_printf("up pressed\n");
+//     }
+//     if (state.down) {
+//         sos_uart_printf("down pressed\n");
+//     }
+// }
 
 
 #define NUM_DUCKS (8)
