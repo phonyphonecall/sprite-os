@@ -88,6 +88,17 @@ void sos_oam_set(uint16_t entry_num,
         _oam_regs[entry_num].word = conv.val;\
     } while (0)
 
+
+struct _inst_set {
+    unsigned int size         : 1;
+    unsigned int sprite_index : 1;
+    unsigned int transpose    : 6;
+};
+union _inst_converter {
+    uint32_t val;
+    struct _inst_set set;
+};
+
 void sos_oam_set_inst(uint8_t entry_num,
                         bool enable,
                         uint8_t palette_num,
@@ -103,5 +114,4 @@ void sos_oam_set_inst(uint8_t entry_num,
 void _sos_init_oam_queue(void);
 
 #endif //GRAPHICS_H
-
 

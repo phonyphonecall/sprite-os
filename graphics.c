@@ -38,9 +38,6 @@ void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     }
 }
 
-// sos_vram_load_vrende_chunk(uint16_t chunk_num, uint8_t *color_indecies[VRENDE_CHUNK_SIZE]);
-// sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[VENTI_CHUNK_SIZE]);
-
 void sos_vram_load_bg(uint8_t *color_indecies) {
     for (uint16_t i = 0; i < (BG_CHUNK_END - BG_CHUNK_START); i += 1) {
         sos_vram_load_grande_chunk((i + BG_CHUNK_START), &color_indecies[i * 64 * 64]);
@@ -87,7 +84,15 @@ void oam_queue_worker(void* args) {
             reg->changed = false;
         }
     }
-    // TODO: Write out instance
+
+    for (int i = 0; i < _NUM_INST_OAM; i++) {
+        _flagged_double_word *reg = &_oam_inst_regs[i];
+        if (reg->changed == true) {
+            SET_ADDR((OAM_BASE_ADDR + 0x200 + (i * 4)), reg->word1);
+            SET_ADDR((OAM_BASE_ADDR + 0x204 + (i * 4)), reg->word2);
+            reg->changed = false;
+        }
+    }
 }
 
 void _sos_init_oam_queue() {
@@ -95,7 +100,6 @@ void _sos_init_oam_queue() {
     memset((void*) _oam_inst_regs, 0, sizeof(_oam_inst_regs));
     sos_register_vsync_cb(oam_queue_worker, 0, true);
 }
-
 
 void sos_oam_set(uint16_t entry_num,
                     bool enable,
@@ -120,14 +124,38 @@ void sos_oam_set(uint16_t entry_num,
     _oam_regs[entry_num].word = conv.val;
 }
 
-// 
-// void sos_oam_inst_set(uint8_t entry_num,
-//                         bool enable,
-//                         uint8_t palette_num,
-//                         bool flip_y,
-//                         bool flip_x,
-//                         uint16_t x_offset,
-//                         uint16_t y_offset
-//                         sprite_size_t size,
-//                         uint8_t sprite_index
-//                         bool transpose);
+void sos_oam_inst_set(uint8_t entry_num,
+                        bool enable,
+                        uint8_t palette_num,
+                        bool flip_y,
+                        bool flip_x,
+                        uint16_t x_offset,
+                        uint16_t y_offset,
+                        uint8_t size,
+                        uint8_t sprite_index,
+                        bool transpose)
+{
+    struct _oam_set set1 = {
+        .en       = enable,
+        .palette  = palette_num,
+        .flip_y   = flip_y,
+        .flip_x   = flip_x,
+        .x_offset = x_offset,
+        .y_offset = y_offset
+    };
+    union _oam_converter conv1 = {
+        .set = set1
+    };
+    struct _inst_set set2 = {
+        .size = size,
+        .sprite_index = sprite_index,
+        .transpose = transpose
+    };
+    union _inst_converter conv2 = {
+        .set = set2
+    };
+    _oam_inst_regs[entry_num].changed = true;
+    _oam_inst_regs[entry_num].word1 = conv1.val;
+    _oam_inst_regs[entry_num].word2 = conv2.val;
+}
+

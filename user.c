@@ -15,6 +15,9 @@
 #define SCREEN_X_MAX (640 - 64 - 1)
 #define SCREEN_Y_MAX (480 - 64 - 1)
 
+#define MODE_HUMAN  (0)
+#define MODE_AI (1)
+
 #define LEFT_SIDE  (0)
 #define RIGHT_SIDE (1)
 
