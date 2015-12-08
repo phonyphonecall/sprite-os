@@ -5,9 +5,6 @@
 #include "pong_paddle.h"
 #include "duck_bg.h"
 
-// #define BALL_OAM (0x00)
-#define PADDLE_1_OAM (0x01)
-#define PADDLE_2_OAM (0x02)
 #define DUCK_HRZ_1 (0x03)
 #define DUCK_HRZ_2 (0x04)
 #define DUCK_HRZ_3 (0x05)
@@ -18,15 +15,8 @@
 #define SCREEN_X_MAX (640 - 64 - 1)
 #define SCREEN_Y_MAX (480 - 64 - 1)
 
-#define MODE_HUMAN (0)
-#define MODE_AI    (1)
-
 #define LEFT_SIDE  (0)
 #define RIGHT_SIDE (1)
-
-#define PADDLE_THICKNESS (13)
-#define LEFT_PADDLE_SURFACE (PADDLE_THICKNESS)
-#define RIGHT_PADDLE_SURFACE (SCREEN_X_MAX - PADDLE_THICKNESS)
 
 bool game_over = false;
 
