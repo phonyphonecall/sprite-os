@@ -35,10 +35,6 @@ void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     }
 }
 
-
-
-
-
 // sos_vram_load_vrende_chunk(uint16_t chunk_num, uint8_t *color_indecies[VRENDE_CHUNK_SIZE]);
 // sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[VENTI_CHUNK_SIZE]);
 // 

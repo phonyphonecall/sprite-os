@@ -21,7 +21,7 @@
 #define VRAM_BASE_ADDR (0xA0000800)
 
 // Private datastructures needed publicly by the update macro
-#define _NUM_OAM 124
+#define _NUM_OAM 61
 #define _NUM_INST_OAM 64
 struct _oam_set {
     unsigned int en         : 1;
