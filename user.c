@@ -115,12 +115,12 @@ void paddle_update(void* data) {
 int frame_count = 0;
 int frame_limit = 3;
 void ball_update(void* data) {
-    frame_count++;
-    if (frame_limit == frame_count) {
-        frame_count = 0;
-    } else {
-        return;
-    }
+    // frame_count++;
+    // if (frame_limit == frame_count) {
+    //     frame_count = 0;
+    // } else {
+    //     return;
+    // }
     // if (ball_x >= 575 || ball_x <= 0) {
     //     // Move faster, every other hit
     //     if (ball_dx > 0) {
