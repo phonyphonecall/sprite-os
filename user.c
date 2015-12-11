@@ -86,7 +86,7 @@ void player_update(void* data) {
 }
 
 
-#define NUM_DUCKS (8)
+#define NUM_DUCKS (6)
 typedef struct duck_t {
     uint8_t id;
     bool alive;
@@ -207,7 +207,7 @@ void sos_user_game_init() {
 
     // load player oam
     // p1
-    p1.oam_id = (NUM_DUCKS * 3 + 1);
+    p1.oam_id = ((NUM_DUCKS + 1) * 3 + 1);
     sos_vram_load_grande_chunk(0x10 + (p1.oam_id), ((uint8_t*) duck1));
     sos_oam_set(p1.oam_id, true, 0x04, false, false, p1.x, (SCREEN_Y_MAX - 64));
     // p2
