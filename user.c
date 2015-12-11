@@ -15,6 +15,8 @@
 #define SCREEN_X_MAX (640 - 64 - 1)
 #define SCREEN_Y_MAX (480 - 64 - 1)
 
+#define PLAYER_Y (SCREEN_Y_MAX - 64)
+
 #define MODE_HUMAN  (0)
 #define MODE_AI (1)
 
@@ -23,11 +25,43 @@
 
 bool game_over = false;
 
+#define NUM_BULLETS (20)
+#define BULLET_SPEED (3)
+#define FIRE_COOLDOWN (40)
+typedef struct bullet_t {
+    bool live;
+    uint16_t x;
+    uint16_t y;
+    uint8_t oam_id;
+} bullet_t;
+
+bullet_t bullets[NUM_BULLETS];
+void bullet_update(void* data) {
+    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
+        if (b->live) {
+            b->y -= BULLET_SPEED;
+            if (b->y > SCREEN_Y_MIN) {
+                sos_oam_update(b->oam_id,
+                    SOS_OAM_OFFSET_Y = (uint16_t) b->y;
+                );
+            } else {
+                b->live = false;
+                sos_oam_update(b->oam_id,
+                    SOS_OAM_ENABLE = false;
+                );
+            }
+        }
+    }
+}
+
+
 typedef struct player_t {
     uint8_t mode;
     uint8_t side;
     bool left;
     bool right;
+    bool fire;
+    uint8_t fire_cooldown;
     uint16_t x;
     uint8_t oam_id;
 } player_t;
@@ -37,6 +71,8 @@ player_t p1 = {
     .side = LEFT_SIDE,
     .left = false,
     .right = false,
+    .fire = false,
+    .fire_cooldown = 0,
     .x = 80
 };
 
@@ -45,6 +81,8 @@ player_t p2 = {
     .side = RIGHT_SIDE,
     .left = false,
     .right = false,
+    .fire = false,
+    .fire_cooldown = 0,
     .x = (SCREEN_X_MAX - 80 - 64)
 };
 
@@ -57,6 +95,7 @@ void get_input(void* data) {
     sos_fill_input_state(id, &state);
     player->left = state.left;
     player->right = state.right;
+    player->fire = state.up;
 
     if (state.left) {
         sos_uart_printf("left pressed\n");
@@ -71,7 +110,7 @@ void player_update(void* data) {
     if (p->left && p->right) {
         // do nothing
     } else if (p->left) {
-        if (p->x < (SCREEN_X_MAX - 64))
+        if (p->x < SCREEN_X_MAX)
             p->x += 2;
     } else if (p->right) {
         if (p->x > 0)
@@ -83,6 +122,29 @@ void player_update(void* data) {
     sos_oam_update(p->oam_id,
         SOS_OAM_OFFSET_X = (uint16_t) p->x;
     );
+
+    // Fire bullet?
+    if (!p->fire_cooldown) {
+        if (p->fire) {
+            p->fire_cooldown = FIRE_COOLDOWN;
+            for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
+                if (!b->live) {
+                    b->live = true;
+                    b->x = p->x;
+                    b->y = PLAYER_Y;
+                    sos_oam_update(b->oam_id,
+                        SOS_OAM_ENABLE = true;
+                        SOS_OAM_OFFSET_X = (uint16_t) b->x;
+                        SOS_OAM_OFFSET_Y = (uint16_t) b->y;
+                    );
+                    return;
+                }
+            }
+            sos_uart_printf("out of bullets\n");
+        }
+    } else {
+        p->fire_cooldown--;
+    }
 }
 
 
@@ -127,7 +189,7 @@ void duck_update(void* data) {
                 duck->state = 0;
             }
 
-            if ((duck->x > (SCREEN_X_MAX - 64)) || (duck->x < 0)) {
+            if ((duck->x > SCREEN_X_MAX) || (duck->x < 0)) {
                 sos_uart_printf("hit end of screen\n");
                 duck->dx *= -1;
                 duck->x += duck->dx;
@@ -184,12 +246,13 @@ void sos_user_game_init() {
 
 
     // load duck vram/oam & init duckstruct
+    uint8_t curr_oam = DUCK_HRZ_1;
     for (uint8_t i = 0; i < NUM_DUCKS; i++) {
         ducks[i].id = i;
         ducks[i].alive = false;
-        ducks[i].oam_id_horiz_1 = DUCK_HRZ_1 + (3 * i);
-        ducks[i].oam_id_horiz_2 = DUCK_HRZ_2 + (3 * i);
-        ducks[i].oam_id_horiz_3 = DUCK_HRZ_3 + (3 * i);
+        ducks[i].oam_id_horiz_1 = curr_oam++;
+        ducks[i].oam_id_horiz_2 = curr_oam++;
+        ducks[i].oam_id_horiz_3 = curr_oam++;
         sos_vram_load_grande_chunk(0x10 + ducks[i].oam_id_horiz_1,
                         ((uint8_t*) duck1));
         sos_vram_load_grande_chunk(0x10 + ducks[i].oam_id_horiz_2,
@@ -207,19 +270,26 @@ void sos_user_game_init() {
 
     // load player oam
     // p1
-    p1.oam_id = ((NUM_DUCKS + 1) * 3 + 1);
+    p1.oam_id = curr_oam++;
     sos_vram_load_grande_chunk(0x10 + (p1.oam_id), ((uint8_t*) duck1));
-    sos_oam_set(p1.oam_id, true, 0x04, false, false, p1.x, (SCREEN_Y_MAX - 64));
+    sos_oam_set(p1.oam_id, true, 0x04, false, false, p1.x, PLAYER_Y);
     // p2
-    p2.oam_id = p1.oam_id + 1;
+    p2.oam_id = curr_oam++;
     sos_vram_load_grande_chunk(0x10 + (p2.oam_id), ((uint8_t*) duck1));
-    sos_oam_set(p2.oam_id, true, 0x04, false, false, p2.x, (SCREEN_Y_MAX - 64));
+    sos_oam_set(p2.oam_id, true, 0x04, false, false, p2.x, PLAYER_Y);
+
+    // bullets
+    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
+        b->oam_id = curr_oam++;
+        sos_vram_load_grande_chunk(0x10 + (b->oam_id), ((uint8_t*) duck1));
+        sos_oam_set(b->oam_id, false, 0x04, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
+    }
 
     // bg vram/oam
-    sos_uart_printf("starting bg load\n");
-    sos_vram_load_bg(((uint8_t*) duck_bg));
-    sos_uart_printf("bg load done\n");
-    sos_oam_set(BG_OAM, true, 0x03, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
+    // sos_uart_printf("starting bg load\n");
+    // sos_vram_load_bg(((uint8_t*) duck_bg));
+    // sos_uart_printf("bg load done\n");
+    // sos_oam_set(BG_OAM, true, 0x03, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
 
 
     // Register callbacks
@@ -228,13 +298,11 @@ void sos_user_game_init() {
         cb_ids[i] = sos_register_vsync_cb(duck_update, &ducks[i], true);
     }
     i++;
-    cb_ids[i] = sos_register_vsync_cb(get_input, &p1, true);
-    i++;
-    cb_ids[i] = sos_register_vsync_cb(get_input, &p2, true);
-    i++;
-    cb_ids[i] = sos_register_vsync_cb(player_update, &p1, true);
-    i++;
-    cb_ids[i] = sos_register_vsync_cb(player_update, &p2, true);
+    cb_ids[i++] = sos_register_vsync_cb(get_input, &p1, true);
+    cb_ids[i++] = sos_register_vsync_cb(get_input, &p2, true);
+    cb_ids[i++] = sos_register_vsync_cb(player_update, &p1, true);
+    cb_ids[i++] = sos_register_vsync_cb(player_update, &p2, true);
+    cb_ids[i++] = sos_register_vsync_cb(bullet_update, 0, true);
     sos_uart_printf("user init done\n");
 }
 
