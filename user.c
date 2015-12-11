@@ -152,6 +152,7 @@ void player_update(void* data) {
 typedef struct duck_t {
     uint8_t id;
     bool alive;
+    uint8_t kill_cooldown;
     uint8_t oam_id_horiz_1;
     uint8_t oam_id_horiz_2;
     uint8_t oam_id_horiz_3;
@@ -216,22 +217,54 @@ void duck_update(void* data) {
         }
         duck->stall++;
     } else {
-        // Should spawn? (x/(2^32) times, will spawn)
-        if (rand_trigger(8000000)) {
-            sos_uart_printf("spawning duck\n");
-            duck->alive = true;
-            uint32_t r = rand();
-            duck->x = 10 + (r % 400);
-            duck->dx = 4;
-            duck->y = 80 + (r % 250);
-            duck->stall = 0;
+        if (!duck->kill_cooldown) {
+            // Should spawn? (x/(2^32) times, will spawn)
+            if (rand_trigger(8000000)) {
+                sos_uart_printf("spawning duck\n");
+                duck->alive = true;
+                uint32_t r = rand();
+                duck->x = 10 + (r % 400);
+                duck->dx = 4;
+                duck->y = 80 + (r % 250);
+                duck->stall = 0;
+            }
+        } else {
+            duck->kill_cooldown--;
+            if (duck->kill_cooldown == 0) {
+                sos_oam_update(duck->oam_id_horiz_1,
+                    SOS_OAM_ENABLE = false;
+                );
+                sos_oam_update(duck->oam_id_horiz_2,
+                    SOS_OAM_ENABLE = false;
+                );
+                sos_oam_update(duck->oam_id_horiz_3,
+                    SOS_OAM_ENABLE = false;
+                );
+            }
+        }
+    }
+}
+
+#define INCLUSIVE_BETWEEN(diff, low, high) ((diff >= low) ? (diff <= high) : false)
+
+#define DUCK_KILL_COOLDOWN (60)
+void detect_hits(void* data) {
+    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
+        for (duck_t *d = &ducks[0]; d <= &ducks[NUM_DUCKS]; d++) {
+            if (d->alive) {
+                if (INCLUSIVE_BETWEEN(b->x, d->x, d->x + 31) &&
+                    INCLUSIVE_BETWEEN(b->y, d->y, d->y + 31))
+                {
+                    d->alive = false;
+                    d->kill_cooldown = DUCK_KILL_COOLDOWN;
+                }
+            }
         }
     }
 }
 
 
 #define KEEP_SIGN(num, sign) (num * ((sign < 0) ? -1 : 1))
-#define INCLUSIVE_BETWEEN(diff, low, high) ((diff >= low) ? (diff <= high) : false)
 
 #define NUM_CBS 8
 sos_cb_id_t cb_ids[NUM_CBS];
@@ -286,10 +319,10 @@ void sos_user_game_init() {
     }
 
     // bg vram/oam
-    // sos_uart_printf("starting bg load\n");
-    // sos_vram_load_bg(((uint8_t*) duck_bg));
-    // sos_uart_printf("bg load done\n");
-    // sos_oam_set(BG_OAM, true, 0x03, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
+    sos_uart_printf("starting bg load\n");
+    sos_vram_load_bg(((uint8_t*) duck_bg));
+    sos_uart_printf("bg load done\n");
+    sos_oam_set(BG_OAM, true, 0x03, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
 
 
     // Register callbacks
@@ -303,6 +336,7 @@ void sos_user_game_init() {
     cb_ids[i++] = sos_register_vsync_cb(player_update, &p1, true);
     cb_ids[i++] = sos_register_vsync_cb(player_update, &p2, true);
     cb_ids[i++] = sos_register_vsync_cb(bullet_update, 0, true);
+    cb_ids[i++] = sos_register_vsync_cb(detect_hits, 0, true);
     sos_uart_printf("user init done\n");
 }
 
