@@ -15,6 +15,6 @@
 #define SOS_ERR (-1)
 
 #define GET_ADDR(addr) (*((uint32_t*) addr))
-#define SET_ADDR(addr, val) (*((uint32_t*) addr) = ((uint32_t) val))
+#define SET_ADDR(addr, val) (*((volatile uint32_t*) addr) = ((volatile uint32_t) val))
 
 #endif // SOS_H
