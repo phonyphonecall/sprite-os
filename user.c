@@ -8,7 +8,7 @@
 #define DUCK_HRZ_1 (0x03)
 #define DUCK_HRZ_2 (0x04)
 #define DUCK_HRZ_3 (0x05)
-#define BG_OAM (0x7A)
+#define BG_OAM (0xF0)
 
 #define SCREEN_X_MIN (0)
 #define SCREEN_Y_MIN (0)
@@ -95,7 +95,7 @@ void get_input(void* data) {
     sos_fill_input_state(id, &state);
     player->left = state.left;
     player->right = state.right;
-    player->fire = state.up;
+    player->fire = (state.aux_a | state.aux_b | state.aux_c | state.aux_d);
 
     if (state.left) {
         sos_uart_printf("left pressed\n");
@@ -109,10 +109,10 @@ void player_update(void* data) {
     player_t *p = (player_t*) data;
     if (p->left && p->right) {
         // do nothing
-    } else if (p->left) {
+    } else if (p->right) {
         if (p->x < SCREEN_X_MAX)
             p->x += 2;
-    } else if (p->right) {
+    } else if (p->left) {
         if (p->x > 0)
             p->x -= 2;
     } else {
@@ -271,8 +271,13 @@ sos_cb_id_t cb_ids[NUM_CBS];
 
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
+  // clear all oams
+  for (uint8_t offset = 0x00; offset <= 0xF0; offset += 4) {
+    (*(volatile uint32_t *)((0xA0000000 + offset)) = (0x00000000));
+  }
+
     // load colors
-    sos_cram_load_palette(0x03, duck_bg_palette);
+    sos_cram_load_palette(0x00, duck_bg_palette);
     sos_cram_load_palette(0x04, duck1_palette);
     sos_cram_load_palette(0x05, duck2_palette);
     sos_cram_load_palette(0x06, duck3_palette);
