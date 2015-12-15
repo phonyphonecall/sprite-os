@@ -1,90 +1,17 @@
 #include "user.h"
-#include "duck1.h"
-#include "duck2.h"
-#include "duck3.h"
-#include "pong_paddle.h"
-#include "duck_bg.h"
+#include "arrow.h"
 
-#define DUCK_HRZ_1 (0x03)
-#define DUCK_HRZ_2 (0x04)
-#define DUCK_HRZ_3 (0x05)
-#define BG_OAM (0xF0)
+#define BG_OAM 0xF0
 
-#define SCREEN_X_MIN (0)
-#define SCREEN_Y_MIN (0)
+#define SCREEN_X_MIN 0
+#define SCREEN_Y_MIN 0
 #define SCREEN_X_MAX (640 - 64 - 1)
 #define SCREEN_Y_MAX (480 - 64 - 1)
 
-#define PLAYER_Y (SCREEN_Y_MAX - 64)
-
-#define MODE_HUMAN  (0)
-#define MODE_AI (1)
-
-#define LEFT_SIDE  (0)
-#define RIGHT_SIDE (1)
-
-bool game_over = false;
-
-#define NUM_BULLETS (20)
-#define BULLET_SPEED (3)
-#define FIRE_COOLDOWN (40)
-typedef struct bullet_t {
-    bool live;
-    uint16_t x;
-    uint16_t y;
-    uint8_t oam_id;
-} bullet_t;
-
-bullet_t bullets[NUM_BULLETS];
-void bullet_update(void* data) {
-    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
-        if (b->live) {
-            b->y -= BULLET_SPEED;
-            if (b->y > SCREEN_Y_MIN) {
-                sos_oam_update(b->oam_id,
-                    SOS_OAM_OFFSET_Y = (uint16_t) b->y;
-                );
-            } else {
-                b->live = false;
-                sos_oam_update(b->oam_id,
-                    SOS_OAM_ENABLE = false;
-                );
-            }
-        }
-    }
-}
-
-
-typedef struct player_t {
-    uint8_t mode;
-    uint8_t side;
-    bool left;
-    bool right;
-    bool fire;
-    uint8_t fire_cooldown;
-    uint16_t x;
-    uint8_t oam_id;
-} player_t;
-
-player_t p1 = {
-    .mode = MODE_HUMAN,
-    .side = LEFT_SIDE,
-    .left = false,
-    .right = false,
-    .fire = false,
-    .fire_cooldown = 0,
-    .x = 80
-};
-
-player_t p2 = {
-    .mode = MODE_AI,
-    .side = RIGHT_SIDE,
-    .left = false,
-    .right = false,
-    .fire = false,
-    .fire_cooldown = 0,
-    .x = (SCREEN_X_MAX - 80 - 64)
-};
+#define VRAM_INSTANCE_0 0
+#define VRAM_SMALL_0 16
+#define VRAM_MED_0 66
+#define VRAM_LARGE_0 98
 
 void get_input(void* data) {
     player_t *player = (player_t*) data;
@@ -147,215 +74,16 @@ void player_update(void* data) {
     }
 }
 
-
-#define NUM_DUCKS (6)
-typedef struct duck_t {
-    uint8_t id;
-    bool alive;
-    uint8_t kill_cooldown;
-    uint8_t oam_id_horiz_1;
-    uint8_t oam_id_horiz_2;
-    uint8_t oam_id_horiz_3;
-    short x;
-    short y;
-    short dx;
-    short dy;
-    uint8_t state;
-    uint8_t stall;
-} duck_t;
-duck_t ducks[NUM_DUCKS];
-
-uint32_t rand() {
-    static uint32_t m_w = 91847;    /* must not be zero, nor 0x464fffff */
-    static uint32_t m_z = 12987412;    /* must not be zero, nor 0x9068ffff */
-    m_z = 36969 * (m_z & 65535) + (m_z >> 16);
-    m_w = 18000 * (m_w & 65535) + (m_w >> 16);
-
-    return (m_z << 16) + m_w;  /* 32-bit result */
-}
-
-// Given a <parts_per_32b_int> chance, maybe trigger
-bool rand_trigger(uint32_t parts_per_32b_int) {
-    uint32_t r = rand();
-    return r <= parts_per_32b_int;
-}
-
-void duck_update(void* data) {
-    duck_t *duck = (duck_t*) data;
-    if (duck->alive) {
-        if (duck->stall % 4 == 0) {
-            duck->x += duck->dx;
-            duck->state++;
-            if (duck->state > 2) {
-                duck->state = 0;
-            }
-
-            if ((duck->x > SCREEN_X_MAX) || (duck->x < 0)) {
-                sos_uart_printf("hit end of screen\n");
-                duck->dx *= -1;
-                duck->x += duck->dx;
-            }
-
-            sos_oam_update(duck->oam_id_horiz_1,
-                SOS_OAM_ENABLE = (bool) (duck->state == 0);
-                SOS_OAM_OFFSET_X = (uint16_t) duck->x;
-                SOS_OAM_OFFSET_Y = (uint16_t) duck->y;
-                SOS_OAM_FLIP_X = (bool) (duck->dx < 0);
-            );
-            sos_oam_update(duck->oam_id_horiz_2,
-                SOS_OAM_ENABLE = (bool) (duck->state == 1);
-                SOS_OAM_OFFSET_X = (uint16_t) duck->x;
-                SOS_OAM_OFFSET_Y = (uint16_t) duck->y;
-                SOS_OAM_FLIP_X = (bool) (duck->dx < 0);
-            );
-            sos_oam_update(duck->oam_id_horiz_3,
-                SOS_OAM_ENABLE = (bool) (duck->state == 2);
-                SOS_OAM_OFFSET_X = (uint16_t) duck->x;
-                SOS_OAM_OFFSET_Y = (uint16_t) duck->y - 10;
-                SOS_OAM_FLIP_X = (bool) (duck->dx < 0);
-            );
-        }
-        duck->stall++;
-    } else {
-        if (!duck->kill_cooldown) {
-            // Should spawn? (x/(2^32) times, will spawn)
-            if (rand_trigger(8000000)) {
-                sos_uart_printf("spawning duck\n");
-                duck->alive = true;
-                uint32_t r = rand();
-                duck->x = 10 + (r % 400);
-                duck->dx = 4;
-                duck->y = 80 + (r % 250);
-                duck->stall = 0;
-            }
-        } else {
-            duck->kill_cooldown--;
-            if (duck->kill_cooldown == 0) {
-                sos_oam_update(duck->oam_id_horiz_1,
-                    SOS_OAM_ENABLE = false;
-                );
-                sos_oam_update(duck->oam_id_horiz_2,
-                    SOS_OAM_ENABLE = false;
-                );
-                sos_oam_update(duck->oam_id_horiz_3,
-                    SOS_OAM_ENABLE = false;
-                );
-            }
-        }
-    }
-}
-
-#define INCLUSIVE_BETWEEN(diff, low, high) ((diff >= low) ? (diff <= high) : false)
-
-#define DUCK_KILL_COOLDOWN (60)
-void detect_hits(void* data) {
-    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
-        for (duck_t *d = &ducks[0]; d <= &ducks[NUM_DUCKS]; d++) {
-            if (d->alive) {
-                if (INCLUSIVE_BETWEEN(b->x, d->x, d->x + 31) &&
-                    INCLUSIVE_BETWEEN(b->y, d->y, d->y + 31))
-                {
-                    d->alive = false;
-                    d->kill_cooldown = DUCK_KILL_COOLDOWN;
-                }
-            }
-        }
-    }
-}
-
-
-#define KEEP_SIGN(num, sign) (num * ((sign < 0) ? -1 : 1))
-
-#define NUM_CBS 8
-sos_cb_id_t cb_ids[NUM_CBS];
-
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
-  // clear all oams
-  for (uint8_t offset = 0x00; offset <= 0xF0; offset += 4) {
-    (*(volatile uint32_t *)((0xA0000000 + offset)) = (0x00000000));
-  }
-
+    for (int c = 0; c < 16; c++) {
+        sos_vram_load_grande_chunk(VRAM_INSTANCE_0 + c, arrow);
+    }
     // load colors
-    sos_cram_load_palette(0x00, duck_bg_palette);
-    sos_cram_load_palette(0x04, duck1_palette);
-    sos_cram_load_palette(0x05, duck2_palette);
-    sos_cram_load_palette(0x06, duck3_palette);
-
-
-    // load duck vram/oam & init duckstruct
-    uint8_t curr_oam = DUCK_HRZ_1;
-    for (uint8_t i = 0; i < NUM_DUCKS; i++) {
-        ducks[i].id = i;
-        ducks[i].alive = false;
-        ducks[i].oam_id_horiz_1 = curr_oam++;
-        ducks[i].oam_id_horiz_2 = curr_oam++;
-        ducks[i].oam_id_horiz_3 = curr_oam++;
-        sos_vram_load_grande_chunk(0x10 + ducks[i].oam_id_horiz_1,
-                        ((uint8_t*) duck1));
-        sos_vram_load_grande_chunk(0x10 + ducks[i].oam_id_horiz_2,
-                        ((uint8_t*) duck2));
-        sos_vram_load_grande_chunk(0x10 + ducks[i].oam_id_horiz_3,
-                        ((uint8_t*) duck3));
-        sos_oam_set(ducks[i].oam_id_horiz_1,
-                        false, 0x04, false, false, SCREEN_X_MIN, 80);
-        sos_oam_set(ducks[i].oam_id_horiz_2,
-                        false, 0x05, false, false, SCREEN_X_MIN, 80);
-        // offset 10px up to align duck head
-        sos_oam_set(ducks[i].oam_id_horiz_3,
-                        false, 0x06, false, false, SCREEN_X_MIN, 80 - 10);
-    }
-
-    // load player oam
-    // p1
-    p1.oam_id = curr_oam++;
-    sos_vram_load_grande_chunk(0x10 + (p1.oam_id), ((uint8_t*) duck1));
-    sos_oam_set(p1.oam_id, true, 0x04, false, false, p1.x, PLAYER_Y);
-    // p2
-    p2.oam_id = curr_oam++;
-    sos_vram_load_grande_chunk(0x10 + (p2.oam_id), ((uint8_t*) duck1));
-    sos_oam_set(p2.oam_id, true, 0x04, false, false, p2.x, PLAYER_Y);
-
-    // bullets
-    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
-        b->oam_id = curr_oam++;
-        sos_vram_load_grande_chunk(0x10 + (b->oam_id), ((uint8_t*) duck1));
-        sos_oam_set(b->oam_id, false, 0x04, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
-    }
-
-    // bg vram/oam
-    sos_uart_printf("starting bg load\n");
-    sos_vram_load_bg(((uint8_t*) duck_bg));
-    sos_uart_printf("bg load done\n");
-    sos_oam_set(BG_OAM, true, 0x03, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
-
-
-    // Register callbacks
-    int i;
-    for (i = 0; i < NUM_DUCKS; i++) {
-        cb_ids[i] = sos_register_vsync_cb(duck_update, &ducks[i], true);
-    }
-    i++;
-    cb_ids[i++] = sos_register_vsync_cb(get_input, &p1, true);
-    cb_ids[i++] = sos_register_vsync_cb(get_input, &p2, true);
-    cb_ids[i++] = sos_register_vsync_cb(player_update, &p1, true);
-    cb_ids[i++] = sos_register_vsync_cb(player_update, &p2, true);
-    cb_ids[i++] = sos_register_vsync_cb(bullet_update, 0, true);
-    cb_ids[i++] = sos_register_vsync_cb(detect_hits, 0, true);
-    sos_uart_printf("user init done\n");
+    sos_cram_load_palette(0x01, arrow_palette);
 }
 
 // Called in a loop for the remainder of the game
 void sos_user_game_tick() {
-    int useless = 0;
-    if (game_over) {
-        sos_uart_printf("game over\n");
-        for (sos_cb_id_t *cb_id = &cb_ids[0]; cb_id <= &cb_ids[NUM_CBS - 1]; cb_id++) {
-            sos_disable_vsync_cb(*cb_id);
-        }
-        while (1) {
-            useless = useless;
-        }
-    }
 }
 
