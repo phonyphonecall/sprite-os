@@ -46,6 +46,7 @@ union _oam_converter {
 };
 
 struct _obj_set {
+    unsigned int _res0        : 25;
     unsigned int size         : 2;
     unsigned int sprite_index : 4;
     unsigned int transpose    : 1;
