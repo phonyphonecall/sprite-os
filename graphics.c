@@ -86,20 +86,10 @@ void oam_queue_worker(void* args) {
             reg->changed = false;
         }
     }
-
-    for (int i = 0; i < _NUM_INST_OAM; i++) {
-        _flagged_double_word *reg = &_oam_inst_regs[i];
-        if (reg->changed == true) {
-            SET_ADDR((OAM_BASE_ADDR + 0x200 + (i * 4)), reg->word1);
-            SET_ADDR((OAM_BASE_ADDR + 0x204 + (i * 4)), reg->word2);
-            reg->changed = false;
-        }
-    }
 }
 
 void _sos_init_oam_queue() {
     memset((void*) _oam_regs, 0, sizeof(_oam_regs));
-    memset((void*) _oam_inst_regs, 0, sizeof(_oam_inst_regs));
     sos_register_vsync_cb(oam_queue_worker, 0, true);
 }
 
@@ -122,42 +112,28 @@ void sos_oam_set(uint16_t entry_num,
     union _oam_converter conv = {
         .set = set
     };
-    _oam_regs[entry_num].changed = true;
-    _oam_regs[entry_num].word = conv.val;
+    if (entry_num >= _INST_BASE) {
+        // instances get directly pushed to memory
+        SET_ADDR((OAM_BASE_ADDR + entry_num*4), (conv.val));
+    } else {
+        _oam_regs[entry_num].changed = true;
+        _oam_regs[entry_num].word = conv.val;
+    }
 }
 
-void sos_oam_inst_set(uint8_t entry_num,
-                        bool enable,
-                        uint8_t palette_num,
-                        bool flip_y,
-                        bool flip_x,
-                        uint16_t x_offset,
-                        uint16_t y_offset,
+void sos_inst_obj_set(uint16_t inst_num,
                         uint8_t size,
                         uint8_t sprite_index,
                         bool transpose)
 {
-    struct _oam_set set1 = {
-        .en       = enable,
-        .palette  = palette_num,
-        .flip_y   = flip_y,
-        .flip_x   = flip_x,
-        .x_offset = x_offset,
-        .y_offset = y_offset
-    };
-    union _oam_converter conv1 = {
-        .set = set1
-    };
-    struct _inst_set set2 = {
+    struct _obj_set set = {
         .size = size,
         .sprite_index = sprite_index,
         .transpose = transpose
     };
-    union _inst_converter conv2 = {
-        .set = set2
+    union _obj_converter conv = {
+        .set = set
     };
-    _oam_inst_regs[entry_num].changed = true;
-    _oam_inst_regs[entry_num].word1 = conv1.val;
-    _oam_inst_regs[entry_num].word2 = conv2.val;
+    SET_ADDR((OAM_BASE_ADDR + 4*(2*inst_num + _INST_BASE + 1)), (conv.val));
 }
 
