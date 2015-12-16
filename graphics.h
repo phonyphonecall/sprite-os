@@ -37,8 +37,7 @@ struct _oam_set {
     unsigned int flip_y     : 1;
     unsigned int flip_x     : 1;
     unsigned int x_offset   : 10;
-    unsigned int _res2      : 1;
-    unsigned int y_offset   : 9;
+    unsigned int y_offset   : 10;
 };
 union _oam_converter {
     uint32_t val;
