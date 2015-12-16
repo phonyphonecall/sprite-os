@@ -97,8 +97,8 @@ void sos_inst_obj_set(uint16_t inst_num,
                       bool transpose);
 
 static inline void sos_inst_set(uint16_t inst_num,
-    uint8_t offset,
     uint8_t size,
+    uint8_t sprite_index,
     bool transpose,
     bool enable,
     uint8_t palette_num,
@@ -107,7 +107,7 @@ static inline void sos_inst_set(uint16_t inst_num,
     uint16_t x_offset,
     uint16_t y_offset)
 {
-    sos_inst_obj_set(inst_num, offset, size, transpose);
+    sos_inst_obj_set(inst_num, size, sprite_index, transpose);
     sos_inst_oam_set(inst_num, enable, palette_num, flip_y, flip_x, x_offset, y_offset);
 }
 
