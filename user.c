@@ -46,7 +46,9 @@ void sos_user_game_init() {
     //sos_set_default_color(0x000022);
 
     // show an instance at (500, 200)
-    sos_inst_set(0, OBJ_64x64, 0, false, true, 0x01, false, false, 500, 200);
+    for (int c = 0; c < 128; c++) {
+        sos_inst_set(c, OBJ_64x64, 0, (c>>2)%2, true, 0x01, (c>>1)%2, c%2, 64 * (c/10), 32 * (c%10));
+    }
     // show a mundane at (69,20)
     //sos_oam_set(0, true, 0x01, true, false, 15 + 64, 20);
     //sos_register_vsync_cb(update, NULL, true);
