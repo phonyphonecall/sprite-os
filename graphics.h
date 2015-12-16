@@ -61,7 +61,7 @@ typedef struct _flagged_word {
 } _flagged_word;
 
 // Holds current diff state of oam
-_flagged_word _oam_regs[_NUM_OAM];
+extern _flagged_word _oam_regs[_NUM_OAM];
 
 // Public API's
 void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies);

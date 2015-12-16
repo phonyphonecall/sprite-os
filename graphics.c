@@ -4,6 +4,9 @@
 #define BG_CHUNK_START  (0x82)
 #define BG_CHUNK_END    (0xCD)
 
+// Holds current diff state of oam
+_flagged_word _oam_regs[_NUM_OAM];
+
 void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     struct vram_set {
         unsigned int _res_0  : 1;
