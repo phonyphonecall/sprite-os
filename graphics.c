@@ -1,8 +1,5 @@
 #include "graphics.h"
-
-#define OAM_BASE_ADDR (0xA0000000)
-#define CRAM_BASE_ADDR (0xA0000400)
-#define VRAM_BASE_ADDR (0xA0000800)
+#include "interrupt.h"
 
 #define BG_CHUNK_START  (0x82)
 #define BG_CHUNK_END    (0xCD)

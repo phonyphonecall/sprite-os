@@ -1,4 +1,7 @@
-#include "sos.h"
+#include "graphics.h"
+#include "uart.h"
+#include "interrupt.h"
+#include "user.h"
 
 int main(int argc, char** argv) {
     int i = 2;
