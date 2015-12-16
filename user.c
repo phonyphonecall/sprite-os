@@ -2,6 +2,7 @@
 #include "duck1.h"
 #include "duck2.h"
 #include "duck3.h"
+#include "bullet.h"
 #include "pong_paddle.h"
 #include "duck_bg.h"
 
@@ -276,6 +277,7 @@ void sos_user_game_init() {
     sos_cram_load_palette(0x04, duck1_palette);
     sos_cram_load_palette(0x05, duck2_palette);
     sos_cram_load_palette(0x06, duck3_palette);
+    sos_cram_load_palette(0x07, bullet_palette);
 
 
     // load duck vram/oam & init duckstruct
@@ -314,8 +316,8 @@ void sos_user_game_init() {
     // bullets
     for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
         b->oam_id = curr_oam++;
-        sos_vram_load_grande_chunk(0x10 + (b->oam_id), ((uint8_t*) duck1));
-        sos_oam_set(b->oam_id, false, 0x04, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
+        sos_vram_load_grande_chunk(0x10 + (b->oam_id), ((uint8_t*) bullet));
+        sos_oam_set(b->oam_id, false, 0x07, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
     }
 
     // bg vram/oam
