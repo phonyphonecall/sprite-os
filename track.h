@@ -6,7 +6,7 @@
 struct __Track;
 
 typedef struct __Arrow {
-    int oamIndex;
+    int instIndex;
     int paletteIndex;
     int yPos;
     struct __Track *track;
@@ -19,7 +19,7 @@ typedef struct __Track {
     int xPos;
 
     int initPalette;
-    int baseOamIndex;
+    int baseInstIndex;
 
     int tail;
     int count;
@@ -28,7 +28,7 @@ typedef struct __Track {
 } Track;
 
 void init_track(Track *track, bool transpose, bool flipX, bool flipY,
-                int xPos, int initPalette, int baseOamIndex);
+                int xPos, int initPalette, int baseInstIndex);
 void update_track(Track *track, bool isBeatFrame);
 
 #endif //_TRACK_H

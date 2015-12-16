@@ -17,7 +17,7 @@
 #define VRAM_MED_0 66
 #define VRAM_LARGE_0 98
 
- int frameCount;
+ uint32_t frameCount;
  Track tracks[4];
 
 // void get_input(void* data) {
@@ -25,20 +25,22 @@
 
 void update(void* data) {
     frameCount++;
-    update_track(&tracks[0], frameCount % 32 == 0);
+    update_track(&tracks[0], frameCount % 64 == 0);
     update_track(&tracks[1], frameCount % 64 == 16);
+    update_track(&tracks[1], frameCount % 64 == 32);
+    update_track(&tracks[1], frameCount % 64 == 48);
 }
 
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
     frameCount = 0;
-    init_track(&tracks[0], true, true, false, 5, 0x01, 0);
-    init_track(&tracks[1], false, false, true, 5 + 64 + 5, 0x01, 16);
+    init_track(&tracks[0], true, true, false, 5 + 69*0, 0x01, 16);
+    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 0);
+    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32);
+    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48);
 
     // load the arrow into all 16 objects and the first mundane
-    for (int c = 16; c < 16 + 32; c++) {
-       sos_vram_load_grande_chunk(VRAM_INSTANCE_0 + c, arrow);
-    }
+    sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
     // load colors into palette 1
     sos_cram_load_palette(0x01, arrow_palette);
     // set the background color

@@ -3,13 +3,13 @@
 #include "track.h"
 
 void init_track(Track *track, bool transpose, bool flipX, bool flipY,
-        int xPos, int initPalette, int baseOamIndex) {
+        int xPos, int initPalette, int baseInstIndex) {
     track->transpose = transpose;
     track->flipX = flipX;
     track->flipY = flipY;
     track->xPos = xPos;
     track->initPalette = initPalette;
-    track->baseOamIndex = baseOamIndex;
+    track->baseInstIndex = baseInstIndex;
     track->tail = 0;
     track->count = 0;
 }
@@ -24,10 +24,13 @@ void spawn_arrow(Track *track) {
     Arrow *arrow = &track->arrows[index];
     
     arrow->track = track;
-    arrow->oamIndex = track->baseOamIndex + index;
+    arrow->instIndex = track->baseInstIndex + index;
     arrow->yPos = 480;
     arrow->paletteIndex = track->initPalette;
-    sos_oam_set(arrow->oamIndex, true, arrow->paletteIndex, track->flipY, track->flipX, track->xPos, arrow->yPos);
+
+    sos_inst_set(arrow->instIndex, OBJ_64x64, 0,
+        track->transpose, true, arrow->paletteIndex,
+        track->flipY, track->flipX, track->xPos, arrow->yPos);
 
     track->count++;
 }
@@ -42,7 +45,7 @@ void delete_arrow(Arrow *arrow) {
         sos_uart_printf("Error: Tried to delete arrows out of order!\n");
     }
 
-    sos_oam_set(arrow->oamIndex, false, 0, false, false, 0, 0);
+    sos_inst_oam_set(arrow->instIndex, false, 0, false, false, 0, 0);
 
     arrow->track->count--;
     arrow->track->tail++;
@@ -56,9 +59,9 @@ void update_arrow(Arrow *arrow, int speed) {
         return;
     }
 
-    sos_oam_update(arrow->oamIndex,
-        SOS_OAM_OFFSET_Y = arrow->yPos;
-    );
+    Track *track = arrow->track;
+    sos_inst_oam_set(arrow->instIndex, true, arrow->paletteIndex,
+        track->flipY, track->flipX, track->xPos, arrow->yPos);
 }
 
 void update_track(Track *track, bool isBeatFrame) {
