@@ -1,5 +1,9 @@
 #include "user.h"
+#include "graphics.h"
+#include "interrupt.h"
+#include "uart.h"
 #include "arrow.h"
+//#include "track.h"
 
 #define BG_OAM 0xF0
 
@@ -13,74 +17,41 @@
 #define VRAM_MED_0 66
 #define VRAM_LARGE_0 98
 
-void get_input(void* data) {
-    player_t *player = (player_t*) data;
+// int frameCount;
+// Track tracks[4];
 
-    sos_input_state_t state;
-    sos_input_id_t id = sos_get_input_id(player->side);
+// void get_input(void* data) {
+// }
 
-    sos_fill_input_state(id, &state);
-    player->left = state.left;
-    player->right = state.right;
-    player->fire = (state.aux_a | state.aux_b | state.aux_c | state.aux_d);
-
-    if (state.left) {
-        sos_uart_printf("left pressed\n");
-    }
-    if (state.right) {
-        sos_uart_printf("right pressed\n");
-    }
-}
-
-void player_update(void* data) {
-    player_t *p = (player_t*) data;
-    if (p->left && p->right) {
-        // do nothing
-    } else if (p->right) {
-        if (p->x < SCREEN_X_MAX)
-            p->x += 2;
-    } else if (p->left) {
-        if (p->x > 0)
-            p->x -= 2;
-    } else {
-        // do nothing
-    }
-    // Update OAM
-    sos_oam_update(p->oam_id,
-        SOS_OAM_OFFSET_X = (uint16_t) p->x;
-    );
-
-    // Fire bullet?
-    if (!p->fire_cooldown) {
-        if (p->fire) {
-            p->fire_cooldown = FIRE_COOLDOWN;
-            for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
-                if (!b->live) {
-                    b->live = true;
-                    b->x = p->x;
-                    b->y = PLAYER_Y;
-                    sos_oam_update(b->oam_id,
-                        SOS_OAM_ENABLE = true;
-                        SOS_OAM_OFFSET_X = (uint16_t) b->x;
-                        SOS_OAM_OFFSET_Y = (uint16_t) b->y;
-                    );
-                    return;
-                }
-            }
-            sos_uart_printf("out of bullets\n");
-        }
-    } else {
-        p->fire_cooldown--;
-    }
-}
+// void update(void* data) {
+//     frameCount++;
+//     update_track(&tracks[0], frameCount % 48 == 0);
+//     update_track(&tracks[1], frameCount % 64 == 16);
+// }
 
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
-    for (int c = 0; c < 16; c++) {
-        sos_vram_load_grande_chunk(VRAM_INSTANCE_0 + c, arrow);
-    }
-    // load colors
+    //frameCount = 0;
+    //init_track(&tracks[0], true, true, false, 5, 0x01, 0);
+    //init_track(&tracks[1], false, false, true, 5 + 64 + 5, 0x01, 16);
+
+    // load the arrow into all 16 objects and the first mundane
+    sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
+    //for (int c = 16; c < 16 + 32; c++) {
+    //    sos_vram_load_grande_chunk(VRAM_INSTANCE_0 + c, arrow);
+    //}
+    // load colors into palette 1
     sos_cram_load_palette(0x01, arrow_palette);
+    // set the background color
+    //sos_set_default_color(0x000022);
+
+    // show an instance at (500, 200)
+    sos_inst_set(0, OBJ_64x64, 0, false, true, 0x01, false, false, 500, 200);
+    // show a mundane at (69,20)
+    //sos_oam_set(0, true, 0x01, true, false, 15 + 64, 20);
+    //sos_register_vsync_cb(update, NULL, true);
+    sos_uart_printf("Instance at (500, 200)\n");
+
 }
 
 // Called in a loop for the remainder of the game
