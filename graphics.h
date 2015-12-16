@@ -72,6 +72,10 @@ void sos_vram_load_bg(uint8_t *color_indecies);
 
 void sos_cram_load_palette(uint8_t palette_num, uint32_t *palette);
 
+static inline void sos_set_default_color(uint32_t color) {
+    SET_ADDR(CRAM_BASE_ADDR, (color & 0x00FFFFFF));
+}
+
 void sos_oam_set(uint16_t entry_num,
                     bool enable,
                     uint8_t palette_num,
