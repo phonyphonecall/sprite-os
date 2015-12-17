@@ -3,6 +3,12 @@
 #include "duck2.h"
 #include "duck3.h"
 #include "bullet.h"
+#include "explosion1.h"
+#include "explosion2.h"
+#include "explosion3.h"
+#include "explosion4.h"
+#include "explosion5.h"
+#include "explosion6.h"
 #include "pong_paddle.h"
 #include "duck_bg.h"
 
@@ -26,7 +32,52 @@
 
 bool game_over = false;
 
-#define NUM_BULLETS (20)
+#define NUM_EXPLOSIONS (6)
+typedef struct explosion_t {
+    bool live;
+    uint16_t x;
+    uint16_t y;
+    uint8_t oam_id;
+    uint8_t live_count;
+} explosion_t;
+explosion_t explosions[NUM_EXPLOSIONS];
+
+void explosion_update(void* data) {
+    int i = 0;
+    for (explosion_t *e = &explosions[0]; e < &explosions[NUM_EXPLOSIONS]; e++) {
+        if (e->live) {
+            if (e->live_count > 0) {
+                // wait
+                sos_oam_update(e->oam_id,
+                    SOS_OAM_ENABLE = true;
+                    SOS_OAM_OFFSET_X = (uint16_t) e->x;
+                    SOS_OAM_OFFSET_Y = (uint16_t) e->y;
+                );
+                e->live_count--;
+            } else {
+                e->live = false;
+                sos_oam_update(e->oam_id,
+                    SOS_OAM_ENABLE = false;
+                );
+                if (i < 5) {
+                    explosion_t *next_exp = &explosions[i+1];
+                    next_exp->live = true;
+                    next_exp->live_count = 10;
+                    next_exp->x = e->x;
+                    next_exp->y = e->y;
+                    sos_oam_update(next_exp->oam_id,
+                        SOS_OAM_ENABLE = true;
+                        SOS_OAM_OFFSET_X = (uint16_t) e->x;
+                        SOS_OAM_OFFSET_Y = (uint16_t) e->y;
+                    );
+                }
+            }
+        }
+        i++;
+    }
+}
+
+#define NUM_BULLETS (10)
 #define BULLET_SPEED (3)
 #define FIRE_COOLDOWN (40)
 typedef struct bullet_t {
@@ -38,7 +89,7 @@ typedef struct bullet_t {
 
 bullet_t bullets[NUM_BULLETS];
 void bullet_update(void* data) {
-    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
+    for (bullet_t *b = &bullets[0]; b < &bullets[NUM_BULLETS]; b++) {
         if (b->live) {
             b->y -= BULLET_SPEED;
             if (b->y > SCREEN_Y_MIN) {
@@ -128,7 +179,7 @@ void player_update(void* data) {
     if (!p->fire_cooldown) {
         if (p->fire) {
             p->fire_cooldown = FIRE_COOLDOWN;
-            for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
+            for (bullet_t *b = &bullets[0]; b < &bullets[NUM_BULLETS]; b++) {
                 if (!b->live) {
                     b->live = true;
                     b->x = p->x;
@@ -248,16 +299,20 @@ void duck_update(void* data) {
 
 #define INCLUSIVE_BETWEEN(diff, low, high) ((diff >= low) ? (diff <= high) : false)
 
-#define DUCK_KILL_COOLDOWN (60)
+#define DUCK_KILL_COOLDOWN (1)
 void detect_hits(void* data) {
-    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
-        for (duck_t *d = &ducks[0]; d <= &ducks[NUM_DUCKS]; d++) {
+    for (bullet_t *b = &bullets[0]; b < &bullets[NUM_BULLETS]; b++) {
+        for (duck_t *d = &ducks[0]; d < &ducks[NUM_DUCKS]; d++) {
             if (d->alive) {
                 if (INCLUSIVE_BETWEEN(b->x, d->x, d->x + 31) &&
                     INCLUSIVE_BETWEEN(b->y, d->y, d->y + 31))
                 {
                     d->alive = false;
                     d->kill_cooldown = DUCK_KILL_COOLDOWN;
+                    explosions[0].live_count = 10;
+                    explosions[0].live = true;
+                    explosions[0].x = d->x;
+                    explosions[0].y = d->y;
                 }
             }
         }
@@ -278,7 +333,12 @@ void sos_user_game_init() {
     sos_cram_load_palette(0x05, duck2_palette);
     sos_cram_load_palette(0x06, duck3_palette);
     sos_cram_load_palette(0x07, bullet_palette);
-
+    sos_cram_load_palette(0x08, explosion1_palette);
+    sos_cram_load_palette(0x09, explosion2_palette);
+    sos_cram_load_palette(0x0A, explosion3_palette);
+    sos_cram_load_palette(0x0B, explosion4_palette);
+    sos_cram_load_palette(0x0C, explosion5_palette);
+    sos_cram_load_palette(0x0D, explosion6_palette);
 
     // load duck vram/oam & init duckstruct
     uint8_t curr_oam = DUCK_HRZ_1;
@@ -302,6 +362,26 @@ void sos_user_game_init() {
         sos_oam_set(ducks[i].oam_id_horiz_3,
                         false, 0x06, false, false, SCREEN_X_MIN, 80 - 10);
     }
+    for (int i = 0; i < 6; i++) {
+        explosions[i].live = false;
+        explosions[i].oam_id = curr_oam++;
+    }
+    sos_vram_load_grande_chunk(0x10 + explosions[0].oam_id,
+                    ((uint8_t*) explosion1));
+    sos_vram_load_grande_chunk(0x10 + explosions[1].oam_id,
+                    ((uint8_t*) explosion2));
+    sos_vram_load_grande_chunk(0x10 + explosions[2].oam_id,
+                    ((uint8_t*) explosion3));
+    sos_vram_load_grande_chunk(0x10 + explosions[3].oam_id,
+                    ((uint8_t*) explosion4));
+    sos_vram_load_grande_chunk(0x10 + explosions[4].oam_id,
+                    ((uint8_t*) explosion5));
+    sos_vram_load_grande_chunk(0x10 + explosions[5].oam_id,
+                    ((uint8_t*) explosion6));
+    for (int i = 0; i < 6; i++) {
+        sos_oam_set(explosions[i].oam_id,
+                        false, 0x08 + i, false, false, 0, 0);
+    }
 
     // load player oam
     // p1
@@ -314,7 +394,7 @@ void sos_user_game_init() {
     sos_oam_set(p2.oam_id, true, 0x04, false, false, p2.x, PLAYER_Y);
 
     // bullets
-    for (bullet_t *b = &bullets[0]; b <= &bullets[NUM_BULLETS]; b++) {
+    for (bullet_t *b = &bullets[0]; b < &bullets[NUM_BULLETS]; b++) {
         b->oam_id = curr_oam++;
         sos_vram_load_grande_chunk(0x10 + (b->oam_id), ((uint8_t*) bullet));
         sos_oam_set(b->oam_id, false, 0x07, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
@@ -337,6 +417,7 @@ void sos_user_game_init() {
     cb_ids[i++] = sos_register_vsync_cb(get_input, &p2, true);
     cb_ids[i++] = sos_register_vsync_cb(player_update, &p1, true);
     cb_ids[i++] = sos_register_vsync_cb(player_update, &p2, true);
+    cb_ids[i++] = sos_register_vsync_cb(explosion_update, 0, true);
     cb_ids[i++] = sos_register_vsync_cb(bullet_update, 0, true);
     cb_ids[i++] = sos_register_vsync_cb(detect_hits, 0, true);
     sos_uart_printf("user init done\n");
