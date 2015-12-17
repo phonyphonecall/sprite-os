@@ -4,6 +4,7 @@
 #include "uart.h"
 #include "arrow.h"
 #include "track.h"
+#include "song.h"
 
 #define BG_OAM 0xF0
 
@@ -25,19 +26,20 @@
 
 void update(void* data) {
     frameCount++;
-    update_track(&tracks[0], frameCount % 64 == 0);
-    update_track(&tracks[1], frameCount % 64 == 16);
-    update_track(&tracks[1], frameCount % 64 == 32);
-    update_track(&tracks[1], frameCount % 64 == 48);
+    bool isBeat = frameCount % 4 == 0;
+    update_track(&tracks[0], isBeat);
+    update_track(&tracks[1], isBeat);
+    update_track(&tracks[2], isBeat);
+    update_track(&tracks[3], isBeat);
 }
 
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
     frameCount = 0;
-    init_track(&tracks[0], true, true, false, 5 + 69*0, 0x01, 16);
-    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 0);
-    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32);
-    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48);
+    init_track(&tracks[0], true, true, false, 5 + 69*0, 0x01, 16, song0);
+    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 0, song1);
+    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32, song2);
+    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48, song3);
 
     // load the arrow into all 16 objects and the first mundane
     sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);

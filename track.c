@@ -3,13 +3,15 @@
 #include "track.h"
 
 void init_track(Track *track, bool transpose, bool flipX, bool flipY,
-        int xPos, int initPalette, int baseInstIndex) {
+        int xPos, int initPalette, int baseInstIndex, uint8_t *song) {
     track->transpose = transpose;
     track->flipX = flipX;
     track->flipY = flipY;
     track->xPos = xPos;
     track->initPalette = initPalette;
     track->baseInstIndex = baseInstIndex;
+    track->song = song;
+    track->wait = *song;
     track->tail = 0;
     track->count = 0;
 }
@@ -66,9 +68,13 @@ void update_arrow(Arrow *arrow, int speed) {
 
 void update_track(Track *track, bool isBeatFrame) {
     if (isBeatFrame) {
-        bool createNewArrow = true;
-        if (createNewArrow) {
+        if (track->wait == 0) {
             spawn_arrow(track);
+            track->song++;
+            track->wait = *track->song;
+        }
+        if (track->wait != 0xFF) {
+            track->wait--;
         }
     }
 
@@ -76,7 +82,7 @@ void update_track(Track *track, bool isBeatFrame) {
     for (int c = 0, idx = track->tail; c < num;
         c++, idx = (idx+1) % NUM_ARROWS_IN_TRACK) {
 
-        update_arrow(&track->arrows[idx], 1);
+        update_arrow(&track->arrows[idx], 4);
     }
 }
 
