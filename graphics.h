@@ -16,6 +16,11 @@
 #define SPRITE_VRENDE (0x2)
 #define SPRITE_VENTI  (0x3)
 
+#define VRAM_INSTANCE_0 0
+#define VRAM_SMALL_0 16
+#define VRAM_MED_0 66
+#define VRAM_LARGE_0 160 //98
+
 #define OAM_BASE_ADDR (0xA0000000)
 #define CRAM_BASE_ADDR (0xA0000400)
 #define VRAM_BASE_ADDR (0xA0000800)
@@ -66,7 +71,7 @@ extern _flagged_word _oam_regs[_NUM_OAM];
 // Public API's
 void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies);
 // void sos_vram_load_vrende_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
-// void sos_vram_load_venti_chunk(uint16_t chunk_num, uint8_t *color_indecies[]);
+void sos_vram_load_venti(uint8_t chunk_num, uint8_t *color_indecies);
 
 void sos_vram_load_bg(uint8_t *color_indecies);
 
