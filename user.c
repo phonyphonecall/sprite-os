@@ -311,8 +311,8 @@ void detect_hits(void* data) {
                     d->kill_cooldown = DUCK_KILL_COOLDOWN;
                     explosions[0].live_count = 10;
                     explosions[0].live = true;
-                    explosions[0].x = d->x;
-                    explosions[0].y = d->y;
+                    explosions[0].x = d->x - 15;
+                    explosions[0].y = d->y - 15;
                 }
             }
         }
