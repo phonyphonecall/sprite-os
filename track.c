@@ -2,9 +2,6 @@
 #include "uart.h"
 #include "track.h"
 
-#define TRACK_HIT_COUNT_RESET 30
-#define RESET_FREEZE_FRAMES 3
-#define SENSOR_X_POS 10
 
 void init_track(Track *track, bool transpose, bool flipX, bool flipY,
         int xPos, int initPalette, int baseInstIndex, uint8_t *song,
@@ -22,7 +19,7 @@ void init_track(Track *track, bool transpose, bool flipX, bool flipY,
     track->receptorOam = receptorOam;
     track->hitCount = 0;
     track->wasActive = false;
-    sos_oam_set(receptorOam, true, RECEPTOR_PALETTE,  receptorFlip, receptorFlip, xPos, SENSOR_X_POS);
+    sos_oam_set(receptorOam, true, RECEPTOR_PALETTE,  receptorFlip, receptorFlip, xPos, SENSOR_Y_POS);
 }
 
 void spawn_arrow(Track *track) {
@@ -36,10 +33,10 @@ void spawn_arrow(Track *track) {
     
     arrow->track = track;
     arrow->instIndex = track->baseInstIndex + index;
-    arrow->yPos = 480;
+    arrow->yPos = ARROW_INIT_Y;
     arrow->paletteIndex = track->initPalette;
-    arrow->enabled = true;
-    arrow->freezeFrames = 0;
+    arrow->ttl = RESET_TTL;
+    arrow->visible = true;
 
     sos_inst_set(arrow->instIndex, OBJ_64x64, 0,
         track->transpose, true, arrow->paletteIndex,
@@ -58,6 +55,10 @@ void delete_arrow(Arrow *arrow) {
         sos_uart_printf("Error: Tried to delete arrows out of order!\n");
     }
 
+    if (arrow->visible) {
+        sos_uart_printf("Missed!\n");
+    }
+
     sos_inst_oam_set(arrow->instIndex, false, 0, false, false, 0, 0);
 
     arrow->track->count--;
@@ -65,23 +66,23 @@ void delete_arrow(Arrow *arrow) {
     arrow->track->tail %= NUM_ARROWS_IN_TRACK;
 }
 
-void update_arrow(Arrow *arrow, int speed) {
-    if (arrow->enabled) {
-        arrow->yPos -= speed;
-    } else if (arrow->freezeFrames > 0) {
-        arrow->freezeFrames--;
-    } else {
-        delete_arrow(arrow);
-        return;
-    }
-    if (arrow->yPos <= -64) {
-        // TODO: TTL
+void update_arrow(Arrow *arrow) {
+    if (arrow->ttl > MAX_ACT_TTL) { // arrow is not yet active
+        // TODO: palette swaps
+    } else if (arrow->ttl >= MIN_ACT_TTL) { // arrow is active
+        // TODO: palette swaps
+    } else if (arrow->ttl > 0) { // arrow is past active
+        // TODO: palette swaps
+    } else { // arrow is expired
         delete_arrow(arrow);
         return;
     }
 
+    arrow->yPos -= PIXELS_PER_VSYNC;
+    arrow->ttl--;
+
     Track *track = arrow->track;
-    sos_inst_oam_set(arrow->instIndex, true, arrow->paletteIndex,
+    sos_inst_oam_set(arrow->instIndex, arrow->visible, arrow->paletteIndex,
         track->flipY, track->flipX, track->xPos, arrow->yPos);
 }
 
@@ -101,23 +102,40 @@ void update_track(Track *track, bool isBeatFrame) {
     for (int c = 0, idx = track->tail; c < num;
         c++, idx = (idx+1) % NUM_ARROWS_IN_TRACK) {
 
-        update_arrow(&track->arrows[idx], 4);
+        update_arrow(&track->arrows[idx]);
     }
 }
 
 void hit_arrow(Arrow *arrow) {
-    arrow->enabled = false;
-    arrow->freezeFrames = RESET_FREEZE_FRAMES;
+    int score = OFF_DIV(3*abs(arrow->ttl - PERFECT_TTL), ACT_TIME/2, 4);
+    switch(score) {
+        case 0:
+            sos_uart_printf("PERFECT!\n");
+            break;
+        case 1:
+            sos_uart_printf("GREAT!\n");
+            break;
+        case 2:
+            sos_uart_printf("Good.\n");
+            break;
+        case 3:
+            sos_uart_printf("Ok.\n");
+            break;
+        default:
+            sos_uart_printf("Unknown?\n");
+            break;
+    }
+    arrow->visible = false;
 }
 
 bool activate_track(Track *track) {
     for (int iter = track->tail, num = track->count; num > 0; num--, iter = (iter+1) % NUM_ARROWS_IN_TRACK) {
         Arrow *arrow = &track->arrows[iter];
-        if (!arrow->enabled) continue;
-        // TODO: timing, not pixels
-        if (arrow->yPos - SENSOR_X_POS > 64)
-            break; // checks if we've passed the target
+        if (!arrow->visible) continue;
+        if (arrow->ttl < MIN_ACT_TTL) continue;
+        if (arrow->ttl > MAX_ACT_TTL) break;
 
+        // We hit an arrow!
         hit_arrow(arrow);
         track->hitCount = TRACK_HIT_COUNT_RESET;
         return true;

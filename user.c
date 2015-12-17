@@ -37,12 +37,12 @@ void get_input(void* data) {
 
 void update(void* data) {
     frameCount++;
-    bool isBeat = frameCount % 4 == 0;
+    bool isBeat = frameCount % VS_PER_TICK == 0;
     update_track(&tracks[0], isBeat);
     update_track(&tracks[1], isBeat);
     update_track(&tracks[2], isBeat);
     update_track(&tracks[3], isBeat);
-    if (frameCount % 8 == 0) {
+    if (isBeat) {
         rotate_bg_palette();
     }
 }
