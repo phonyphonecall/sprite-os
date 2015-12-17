@@ -8,23 +8,21 @@
 #include "track.h"
 #include "song.h"
 #include "scott1.h"
+#include "scott2.h"
 #include "background.h"
 #include "receptor.h"
 
 #define BG_OAM 0xF0
+#define OAM_LARGE_0 120
 
 #define SCREEN_X_MIN 0
 #define SCREEN_Y_MIN 0
 #define SCREEN_X_MAX (640 - 64 - 1)
 #define SCREEN_Y_MAX (480 - 64 - 1)
 
-#define VRAM_INSTANCE_0 0
-#define VRAM_SMALL_0 16
-#define VRAM_MED_0 66
-#define VRAM_LARGE_0 98
-
  uint32_t frameCount;
  Track tracks[4];
+ uint32_t dancer_mode;
 
 void get_input(void* data) {
     sos_input_state_t input;
@@ -33,6 +31,37 @@ void get_input(void* data) {
     control_track(&tracks[1], input.down  | input.aux_b);
     control_track(&tracks[2], input.up    | input.aux_c);
     control_track(&tracks[3], input.right | input.aux_a);
+}
+
+void update_dancer(int tickCount) {
+    static bool flips[8] = {
+        true,
+        false,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+    };
+    static bool egyptian[8] = {
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        true
+    };
+    sos_oam_update(OAM_LARGE_0,
+        SOS_OAM_ENABLE=egyptian[tickCount/2];
+        SOS_OAM_FLIP_X=flips[tickCount/2];
+    );
+    sos_oam_update(OAM_LARGE_0+1,
+        SOS_OAM_ENABLE=!egyptian[tickCount/2];
+        SOS_OAM_FLIP_X=flips[tickCount/2];
+    );
 }
 
 void update(void* data) {
@@ -44,6 +73,7 @@ void update(void* data) {
     update_track(&tracks[3], isBeat, tickCount);
     if (isBeat) {
         rotate_bg_palette();
+        update_dancer(tickCount);
     }
     frameCount++;
 }
@@ -167,22 +197,10 @@ void init_background() {
 }
 
 void load_dancer() {
-    // BORKED!!!!
-    // #define SCOTT_OFFSET (192-16)
-    // for (int y = 0; y < 4; y++) {
-    //     for (int x = 0; x < 4; x++) {
-    //         for (int row = 0; row < 64; row++) {
-    //             for (int col = 0; col < 64; col++) {
-    //                 uint32_t write = ((SCOTT_OFFSET + y*4 + x) << 23) |
-    //                                  (row << 17) |
-    //                                  (col << 11) |
-    //                                  (scott1[y*64*4 + x*64 + row*64*4 + col] & 0x0F);
-    //                 SET_ADDR(VRAM_BASE_ADDR, write);
-    //             }
-    //         }
-    //     }
-    // }
-    // sos_oam_set(121, true, 0x01, false, false, 300, 100);
+    sos_vram_load_venti(0, scott1);
+    sos_vram_load_venti(1, scott2);
+    sos_oam_set(OAM_LARGE_0, true, 0x01, false, false, 300, 100);
+    sos_oam_set(OAM_LARGE_0+1, true, 0x02, false, false, 300, 100);
 }
 
 // Register interupts, init graphics etc...
@@ -198,6 +216,9 @@ void sos_user_game_init() {
     // load colors into palette 1
     sos_set_default_color(bg_palette[0]);
     sos_cram_load_palette(0x00, bg_palette+1);
+
+    sos_cram_load_palette(0x01, scott1_palette);
+    sos_cram_load_palette(0x02, scott2_palette);
 
     sos_cram_load_palette(0x10, arrow_palette_0);
     sos_cram_load_palette(0x11, arrow_palette_1);
