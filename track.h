@@ -35,6 +35,7 @@ struct __Track;
 
 typedef struct __Arrow {
     int instIndex;
+    int objectIndex;
     int paletteOffset;
     int yPos;
 

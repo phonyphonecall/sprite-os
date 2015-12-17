@@ -211,8 +211,10 @@ void sos_user_game_init() {
     init_track(&tracks[2], false, false, true, 5 + 69*2, 32, song2, 2, true);
     init_track(&tracks[3], true, false, false, 5 + 69*3, 48, song3, 3, false);
 
-    // load the arrow into the first object
-    sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
+    // load the arrow into all objects
+    for (int c = 0; c < 16; c++) {
+        sos_vram_load_grande_chunk(VRAM_INSTANCE_0+c, arrow);
+    }
     // load colors into palette 1
     sos_set_default_color(bg_palette[0]);
     sos_cram_load_palette(0x00, bg_palette+1);

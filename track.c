@@ -32,12 +32,13 @@ void spawn_arrow(Track *track, int tickCount) {
     
     arrow->track = track;
     arrow->instIndex = track->baseInstIndex + index;
+    arrow->objectIndex = index;
     arrow->yPos = ARROW_INIT_Y;
     arrow->paletteOffset = ARROW_BASE_OFFSET % 16 + (tickCount%4)*4; // TODO
     arrow->ttl = RESET_TTL;
     arrow->visible = true;
 
-    sos_inst_set(arrow->instIndex, OBJ_64x64, 0,
+    sos_inst_set(arrow->instIndex, OBJ_64x64, arrow->objectIndex,
         track->transpose, true, arrow->paletteOffset + ARROW_BASE_PALETTE,
         track->flipY, track->flipX, track->xPos, arrow->yPos);
 
