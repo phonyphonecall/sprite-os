@@ -139,8 +139,6 @@ void move_right(player_t *p) {
         }
         else {
             p->x = SCREEN_X_MAX;
-            p->right = false;
-            p->left = true;
         }
     }
     if ( p->stall > STALL) {
