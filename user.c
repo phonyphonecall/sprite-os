@@ -85,7 +85,7 @@ void get_input(void* data) {
 
     sos_fill_input_state(id, &state);
     player->left = state.left;
-    //player->right = state.right;
+    player->right = state.right;
     player->up = state.up;
     if (state.left) {
         sos_uart_printf("left pressed\n");
@@ -118,6 +118,10 @@ void swap_character(player_t* p, uint8_t new_oam) {
         sos_oam_update(p->oam_curr_id,
         SOS_OAM_FLIP_X = true;
         );
+    } else {
+        sos_oam_update(p->oam_curr_id,
+        SOS_OAM_FLIP_X = false;
+        );
     }
 }
 
@@ -133,8 +137,11 @@ void move_right(player_t *p) {
         if (p->x + p->dx < SCREEN_X_MAX) {
             p->x += p->dx;
         }
-        else
+        else {
             p->x = SCREEN_X_MAX;
+            p->right = false;
+            p->left = true;
+        }
     }
     if ( p->stall > STALL) {
         if (p->oam_base_id - p->oam_curr_id == OAM_MARIO_STAND) {
@@ -164,6 +171,17 @@ void move_left(player_t *p) {
         else
             p->x -= p->dx;
     }
+    if ( p->stall > STALL) {
+        if (p->oam_base_id - p->oam_curr_id == OAM_MARIO_STAND) {
+            swap_character(p, OAM_MARIO_JUMP);
+            p->stall = 0;
+        } else { 
+            swap_character(p, OAM_MARIO_STAND);
+            p->stall = 0;
+        }
+    } else {
+        p->stall++;
+    }
     // swap standing/walking
 }
 
@@ -175,7 +193,9 @@ void player_update(void* data) {
         move_right(p);
     } else if (p->left) {
         move_left(p);
-    } else if (p->up) {
+    } 
+
+    if (p->up) {
         if (!p->jump) {
             p->jump = true;
             p->jump_height = 0;
@@ -309,7 +329,7 @@ sos_cb_id_t cb_ids[NUM_CBS];
 void sos_user_game_init() {
   // clear all oams
   for (uint8_t offset = 0x00; offset <= 0xF0; offset += 4) {
-    (*(volatile uint32_t *)((0xA0000000 + offset)) = (0x00000000));
+    *(volatile uint32_t *)((0xA0000000 + offset)) = (0x00000000);
   }
 
     // load colors
