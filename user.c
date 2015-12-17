@@ -327,6 +327,10 @@ sos_cb_id_t cb_ids[NUM_CBS];
 
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
+    for (uint8_t o = 0x00; o <= 0x0F; o += 4) {
+        sos_oam_set(o, false, 0x00, false, false, 0, 0);
+    }
+
     // load colors
     sos_cram_load_palette(0x00, duck_bg_palette);
     sos_cram_load_palette(0x04, duck1_palette);
