@@ -328,7 +328,7 @@ sos_cb_id_t cb_ids[NUM_CBS];
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
     // load colors
-    sos_cram_load_palette(0x03, duck_bg_palette);
+    sos_cram_load_palette(0x00, duck_bg_palette);
     sos_cram_load_palette(0x04, duck1_palette);
     sos_cram_load_palette(0x05, duck2_palette);
     sos_cram_load_palette(0x06, duck3_palette);
@@ -404,7 +404,7 @@ void sos_user_game_init() {
     sos_uart_printf("starting bg load\n");
     sos_vram_load_bg(((uint8_t*) duck_bg));
     sos_uart_printf("bg load done\n");
-    sos_oam_set(BG_OAM, true, 0x03, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
+    sos_oam_set(BG_OAM, true, 0x00, false, false, SCREEN_X_MIN, SCREEN_Y_MIN);
 
 
     // Register callbacks
