@@ -187,17 +187,33 @@ void load_dancer() {
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
     frameCount = 0;
-    init_track(&tracks[0], true, false, true, 5 + 69*0, 0x01, 0, song0, 0, true);
-    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 16, song1, 1, false);
-    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32, song2, 2, true);
-    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48, song3, 3, false);
+    init_track(&tracks[0], true, false, true, 5 + 69*0, 0x14, 0, song0, 0, true);
+    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x15, 16, song1, 1, false);
+    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x16, 32, song2, 2, true);
+    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x17, 48, song3, 3, false);
 
     // load the arrow into all 16 objects and the first mundane
     sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
     // load colors into palette 1
     sos_set_default_color(bg_palette[0]);
     sos_cram_load_palette(0x00, bg_palette+1);
-    sos_cram_load_palette(0x01, arrow_palette);
+    sos_cram_load_palette(0x10, arrow_palette_0);
+    sos_cram_load_palette(0x11, arrow_palette_1);
+    sos_cram_load_palette(0x12, arrow_palette_2);
+    sos_cram_load_palette(0x13, arrow_palette_3);
+    sos_cram_load_palette(0x14, arrow_palette_4);
+    sos_cram_load_palette(0x15, arrow_palette_5);
+    sos_cram_load_palette(0x16, arrow_palette_6);
+    sos_cram_load_palette(0x17, arrow_palette_7);
+    sos_cram_load_palette(0x18, arrow_palette_8);
+    sos_cram_load_palette(0x19, arrow_palette_9);
+    sos_cram_load_palette(0x1A, arrow_palette_10);
+    sos_cram_load_palette(0x1B, arrow_palette_11);
+    sos_cram_load_palette(0x1C, arrow_palette_12);
+    sos_cram_load_palette(0x1D, arrow_palette_13);
+    sos_cram_load_palette(0x1E, arrow_palette_14);
+    sos_cram_load_palette(0x1F, arrow_palette_15);
+
     sos_cram_load_palette(RECEPTOR_PALETTE, receptor_palette);
     sos_cram_load_palette(ACTIVE_PALETTE, active_palette);
     sos_cram_load_palette(MISSED_PALETTE, missed_palette);
