@@ -21,7 +21,7 @@ void init_track(Track *track, bool transpose, bool flipX, bool flipY,
     sos_oam_set(receptorOam, true, RECEPTOR_PALETTE,  receptorFlip, receptorFlip, xPos, SENSOR_Y_POS);
 }
 
-void spawn_arrow(Track *track) {
+void spawn_arrow(Track *track, int tickCount) {
     if (track->count == NUM_ARROWS_IN_TRACK) {
         sos_uart_printf("Error: Track has no more arrows!\n");
         return;
@@ -33,7 +33,7 @@ void spawn_arrow(Track *track) {
     arrow->track = track;
     arrow->instIndex = track->baseInstIndex + index;
     arrow->yPos = ARROW_INIT_Y;
-    arrow->paletteOffset = 0; // TODO
+    arrow->paletteOffset = ARROW_BASE_OFFSET % 16 + (tickCount%4)*4; // TODO
     arrow->ttl = RESET_TTL;
     arrow->visible = true;
 
@@ -81,14 +81,14 @@ void update_arrow(Arrow *arrow, int tickCount) {
     arrow->ttl--;
 
     Track *track = arrow->track;
-    sos_inst_oam_set(arrow->instIndex, arrow->visible, ARROW_BASE_PALETTE + arrow->paletteOffset + tickCount,
+    sos_inst_oam_set(arrow->instIndex, arrow->visible, ARROW_BASE_PALETTE + (arrow->paletteOffset + tickCount)%16,
         track->flipY, track->flipX, track->xPos, arrow->yPos);
 }
 
 void update_track(Track *track, bool isBeatFrame, int tickCount) {
     if (isBeatFrame) {
         if (track->wait == 0) {
-            spawn_arrow(track);
+            spawn_arrow(track, tickCount);
             track->song++;
             track->wait = *track->song;
         }

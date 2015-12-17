@@ -29,6 +29,7 @@
 #define ACTIVE_PALETTE 3
 #define MISSED_PALETTE 4
 #define ARROW_BASE_PALETTE 0x10
+#define ARROW_BASE_OFFSET (16 - (RESET_TTP % 16))
 
 struct __Track;
 

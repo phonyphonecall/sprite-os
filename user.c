@@ -36,7 +36,6 @@ void get_input(void* data) {
 }
 
 void update(void* data) {
-    frameCount++;
     bool isBeat = frameCount % VS_PER_TICK == 0;
     int tickCount = (frameCount/VS_PER_TICK) % 16;
     update_track(&tracks[0], isBeat, tickCount);
@@ -46,6 +45,7 @@ void update(void* data) {
     if (isBeat) {
         rotate_bg_palette();
     }
+    frameCount++;
 }
 
 static inline void set_bg(uint32_t x, uint32_t y, uint32_t val) {
