@@ -36,7 +36,7 @@ void update(void* data) {
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
     frameCount = 0;
-    init_track(&tracks[0], true, true, false, 5 + 69*0, 0x01, 16, song0);
+    init_track(&tracks[0], true, false, true, 5 + 69*0, 0x01, 16, song0);
     init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 0, song1);
     init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32, song2);
     init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48, song3);
