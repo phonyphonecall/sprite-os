@@ -26,34 +26,12 @@
 // }
 
 void update(void* data) {
-    // frameCount++;
-    // bool isBeat = frameCount % 4 == 0;
-    // update_track(&tracks[0], isBeat);
-    // update_track(&tracks[1], isBeat);
-    // update_track(&tracks[2], isBeat);
-    // update_track(&tracks[3], isBeat);
-    static int oam_entry = 0;
-    static int count = 0;
-    if (oam_entry + 120 < _NUM_OAM - 2) {
-        switch(count) {
-            case 0:
-                sos_uart_printf("Entry!\n");
-                sos_oam_set(120 + oam_entry, true, 0x01, false, false, oam_entry, 0);
-                break;
-            case 1:
-                sos_vram_load_grande_chunk(128 + 4*8 + oam_entry*16, arrow);
-                sos_vram_load_grande_chunk(128 + 4*8 + oam_entry*16+5, arrow);
-                sos_vram_load_grande_chunk(128 + 4*8 + oam_entry*16+10, arrow);
-                sos_vram_load_grande_chunk(128 + 4*8 + oam_entry*16+15, arrow);
-                break;
-            case 2:
-                sos_oam_set(120 + oam_entry, false, 0x00, false, false, 0, 0);
-                count = -1;
-                oam_entry++;
-                break;
-        }
-        count++;
-    }
+    frameCount++;
+    bool isBeat = frameCount % 4 == 0;
+    update_track(&tracks[0], isBeat);
+    update_track(&tracks[1], isBeat);
+    update_track(&tracks[2], isBeat);
+    update_track(&tracks[3], isBeat);
 }
 
 static inline void set_bg(uint32_t x, uint32_t y, uint32_t val) {
@@ -86,7 +64,9 @@ static inline void set_bg(uint32_t x, uint32_t y, uint32_t val) {
 
 void init_background() {
     sos_uart_printf("Beginning background setup\n");
-    for (int band = 0, offset = 0; band < 12; band++, offset += 40) {
+    int offset = 0;
+    // draw left triangle of screen
+    for (int band = 0; band < 12; band++, offset += 40) {
         // draw upper triangle
         for (int diagonal = offset + 38, count = 1; diagonal >= offset; diagonal -= 2, count++) {
             for (int y = 0; y < count; y++) {
@@ -113,22 +93,67 @@ void init_background() {
             }
         }
     }
+
+    // draw center rhombus
+    for (int band = 12; band < 16; band++, offset += 40) {
+        // draw upper triangle
+        for (int diagonal = offset + 38, count = 1; diagonal >= offset; diagonal -= 2, count++) {
+            for (int y = 0; y < count; y++) {
+                set_bg(diagonal+y, y, band);
+                set_bg(diagonal+y+1, y, band);
+            }
+        }
+
+        // draw intermediate strip
+        for (int x = offset - 1, count = 1; count < 480-20; x--, count++) {
+            for (int y = 0; y < 20; y++) {
+                set_bg(x+y, count+y, band);
+                set_bg(x+y+1, count+y, band);
+            }
+        }
+
+        // draw bottom triangle
+        for (int count = offset - 480 + 20, y = -20; y < 0; count--, y++) {
+            for (int x = 0; x < -y; x++) {
+                set_bg(count+x, 480+x+y, band);
+                set_bg(count+x+1, 480+x+y, band);
+            }
+        }
+    }
+
+    // draw right triangle of screen
+    for (int band = 0; band < 12; band++, offset += 40) {
+        // draw side triangle
+        for (int count = 0; count < 20; count++) {
+            for (int pos = 0; pos < count; pos++) {
+                set_bg(639-count+pos, offset+count+pos-639, band);
+                set_bg(640-count+pos, offset+count+pos-639, band);
+            }
+            set_bg(639, offset-640+count*2+1, band);
+        }
+
+        // draw intermediate strip
+        for (int x = 640 - 20 - 1, count = offset-x; count < 480-20; x--, count++) {
+            for (int y = 0; y < 20; y++) {
+                set_bg(x+y, count+y, band);
+                set_bg(x+y+1, count+y, band);
+            }
+        }
+
+        // draw bottom triangle
+        for (int count = offset - 480 + 20, y = -20; y < 0; count--, y++) {
+            for (int x = 0; x < -y; x++) {
+                set_bg(count+x, 480+x+y, band);
+                set_bg(count+x+1, 480+x+y, band);
+            }
+        }
+    }
+
     sos_uart_printf("Finished background\n");
 }
 
-// Register interupts, init graphics etc...
-void sos_user_game_init() {
-    // frameCount = 0;
-    // init_track(&tracks[0], true, false, true, 5 + 69*0, 0x01, 16, song0);
-    // init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 0, song1);
-    // init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32, song2);
-    // init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48, song3);
-
-    // load the arrow into all 16 objects and the first mundane
-//    sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
-    // load colors into palette 1
-    //sos_cram_load_palette(0x00, arrow_palette);
-    sos_cram_load_palette(0x01, arrow_palette);
+void load_dancer() {
+    // BORKED!!!!
     // #define SCOTT_OFFSET (192-16)
     // for (int y = 0; y < 4; y++) {
     //     for (int x = 0; x < 4; x++) {
@@ -143,19 +168,33 @@ void sos_user_game_init() {
     //         }
     //     }
     // }
+    // sos_oam_set(121, true, 0x01, false, false, 300, 100);
+}
 
-//    sos_cram_load_palette(0x01, arrow_palette);
-    // set the background color
-    //sos_set_default_color(0x0000CC);
+// Register interupts, init graphics etc...
+void sos_user_game_init() {
+    frameCount = 0;
+    init_track(&tracks[0], true, false, true, 5 + 69*0, 0x01, 16, song0);
+    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 0, song1);
+    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32, song2);
+    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48, song3);
+
+    // load the arrow into all 16 objects and the first mundane
+    sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
+    // load colors into palette 1
+    sos_cram_load_palette(0x00, arrow_palette);
+    sos_cram_load_palette(0x01, arrow_palette);
+
+    load_dancer();
 
     // show an instance at (500, 200)
-//    sos_inst_set(0, OBJ_64x64, 0, false, true, 0x01, false, false, 500, 200);
+    sos_inst_set(0, OBJ_64x64, 0, false, true, 0x01, false, false, 500, 200);
     // show a mundane at (69,20)
-    //sos_oam_set(0, false, 0x01, true, false, 15 + 64, 20);
-    sos_register_vsync_cb(update, NULL, true);
-    // sos_oam_set(121, true, 0x01, false, false, 300, 100);
+    sos_oam_set(0, false, 0x01, true, false, 15 + 64, 20);
 
-    //init_background();
+    init_background();
+
+    sos_register_vsync_cb(update, NULL, true);
     sos_uart_printf("DDR init done\n");
 }
 

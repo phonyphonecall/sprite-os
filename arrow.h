@@ -77,6 +77,6 @@ uint32_t arrow_palette[PALETTE_SIZE] = {
 0x00ec7550,
 0x00fd8846,
 0x00ff9c3a,
-0x00000000,
-0x00000000
+0x00ff0000,
+0x0000ff00
 };
