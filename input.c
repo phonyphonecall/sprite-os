@@ -3,12 +3,8 @@
 #define SOS_INPUT_BASE_ADDR (0xB0000000)
 #define SOS_MAX_INPUT_ADDR  (0xB000000C)
 
-sos_input_id_t sos_get_input_id(int index) {
-    return (sos_input_id_t) index * 4;    
-}
-
-void sos_fill_input_state(sos_input_id_t id, sos_input_state_t *state) {
-    uint32_t val = GET_ADDR((SOS_INPUT_BASE_ADDR + id));
+void sos_fill_input_state(uint32_t player, sos_input_state_t *state) {
+    uint32_t val = GET_ADDR((SOS_INPUT_BASE_ADDR + player*4));
     state->left = ((val & 0x01) != 0);
     state->right = ((val & 0x02) != 0);
     state->up = ((val & 0x04) != 0);

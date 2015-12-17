@@ -29,8 +29,7 @@ typedef struct sos_input_state_diff_t {
     int active;
 } sos_input_state_diff_t;
 
-sos_input_id_t sos_get_input_id(int index);
-void sos_fill_input_state(sos_input_id_t id, sos_input_state_t *state);
+void sos_fill_input_state(uint32_t player, sos_input_state_t *state);
 bool sos_diff_input_states(sos_input_state_t a, sos_input_state_t b, sos_input_state_diff_t *diff);
 
 #endif // INPUT_H

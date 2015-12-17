@@ -2,11 +2,14 @@
 #include "graphics.h"
 #include "interrupt.h"
 #include "uart.h"
+#include "input.h"
+
 #include "arrow.h"
 #include "track.h"
 #include "song.h"
 #include "scott1.h"
 #include "background.h"
+#include "receptor.h"
 
 #define BG_OAM 0xF0
 
@@ -23,8 +26,14 @@
  uint32_t frameCount;
  Track tracks[4];
 
-// void get_input(void* data) {
-// }
+void get_input(void* data) {
+    sos_input_state_t input;
+    sos_fill_input_state(0, &input);
+    control_track(&tracks[0], input.left  | input.aux_d);
+    control_track(&tracks[1], input.down  | input.aux_b);
+    control_track(&tracks[2], input.up    | input.aux_c);
+    control_track(&tracks[3], input.right | input.aux_a);
+}
 
 void update(void* data) {
     frameCount++;
@@ -178,10 +187,10 @@ void load_dancer() {
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
     frameCount = 0;
-    init_track(&tracks[0], true, false, true, 5 + 69*0, 0x01, 16, song0);
-    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 0, song1);
-    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32, song2);
-    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48, song3);
+    init_track(&tracks[0], true, false, true, 5 + 69*0, 0x01, 0, song0, 0, true);
+    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x01, 16, song1, 1, false);
+    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x01, 32, song2, 2, true);
+    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x01, 48, song3, 3, false);
 
     // load the arrow into all 16 objects and the first mundane
     sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
@@ -189,17 +198,22 @@ void sos_user_game_init() {
     sos_set_default_color(bg_palette[0]);
     sos_cram_load_palette(0x00, bg_palette+1);
     sos_cram_load_palette(0x01, arrow_palette);
+    sos_cram_load_palette(RECEPTOR_PALETTE, receptor_palette);
+    sos_cram_load_palette(ACTIVE_PALETTE, active_palette);
+    sos_cram_load_palette(MISSED_PALETTE, missed_palette);
 
     load_dancer();
 
-    // show an instance at (500, 200)
-    sos_inst_set(0, OBJ_64x64, 0, false, true, 0x01, false, false, 500, 200);
-    // show a mundane at (69,20)
-    sos_oam_set(0, false, 0x01, true, false, 15 + 64, 20);
+    sos_vram_load_grande_chunk(16, receptor_right);
+    sos_vram_load_grande_chunk(17, receptor_down);
+    sos_vram_load_grande_chunk(18, receptor_down);
+    sos_vram_load_grande_chunk(19, receptor_right);
 
-    init_background();
+    //init_background();
 
     sos_register_vsync_cb(update, NULL, true);
+    sos_register_vsync_cb(get_input, NULL, true);
+
     sos_uart_printf("DDR init done\n");
 }
 
