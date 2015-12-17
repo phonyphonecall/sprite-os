@@ -6,6 +6,7 @@
 #include "track.h"
 #include "song.h"
 #include "scott1.h"
+#include "background.h"
 
 #define BG_OAM 0xF0
 
@@ -32,6 +33,9 @@ void update(void* data) {
     update_track(&tracks[1], isBeat);
     update_track(&tracks[2], isBeat);
     update_track(&tracks[3], isBeat);
+    if (frameCount % 8 == 0) {
+        rotate_bg_palette();
+    }
 }
 
 static inline void set_bg(uint32_t x, uint32_t y, uint32_t val) {
@@ -182,7 +186,8 @@ void sos_user_game_init() {
     // load the arrow into all 16 objects and the first mundane
     sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
     // load colors into palette 1
-    sos_cram_load_palette(0x00, arrow_palette);
+    sos_set_default_color(bg_palette[0]);
+    sos_cram_load_palette(0x00, bg_palette+1);
     sos_cram_load_palette(0x01, arrow_palette);
 
     load_dancer();
