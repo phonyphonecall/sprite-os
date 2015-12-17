@@ -4,13 +4,12 @@
 
 
 void init_track(Track *track, bool transpose, bool flipX, bool flipY,
-        int xPos, int initPalette, int baseInstIndex, uint8_t *song,
+        int xPos, int baseInstIndex, uint8_t *song,
         int receptorOam, bool receptorFlip) {
     track->transpose = transpose;
     track->flipX = flipX;
     track->flipY = flipY;
     track->xPos = xPos;
-    track->initPalette = initPalette;
     track->baseInstIndex = baseInstIndex;
     track->song = song;
     track->wait = *song;
@@ -34,12 +33,12 @@ void spawn_arrow(Track *track) {
     arrow->track = track;
     arrow->instIndex = track->baseInstIndex + index;
     arrow->yPos = ARROW_INIT_Y;
-    arrow->paletteIndex = track->initPalette;
+    arrow->paletteOffset = 0; // TODO
     arrow->ttl = RESET_TTL;
     arrow->visible = true;
 
     sos_inst_set(arrow->instIndex, OBJ_64x64, 0,
-        track->transpose, true, arrow->paletteIndex,
+        track->transpose, true, arrow->paletteOffset + ARROW_BASE_PALETTE,
         track->flipY, track->flipX, track->xPos, arrow->yPos);
 
     track->count++;
@@ -66,7 +65,7 @@ void delete_arrow(Arrow *arrow) {
     arrow->track->tail %= NUM_ARROWS_IN_TRACK;
 }
 
-void update_arrow(Arrow *arrow) {
+void update_arrow(Arrow *arrow, int tickCount) {
     if (arrow->ttl > MAX_ACT_TTL) { // arrow is not yet active
         // TODO: palette swaps
     } else if (arrow->ttl >= MIN_ACT_TTL) { // arrow is active
@@ -82,11 +81,11 @@ void update_arrow(Arrow *arrow) {
     arrow->ttl--;
 
     Track *track = arrow->track;
-    sos_inst_oam_set(arrow->instIndex, arrow->visible, arrow->paletteIndex,
+    sos_inst_oam_set(arrow->instIndex, arrow->visible, ARROW_BASE_PALETTE + arrow->paletteOffset + tickCount,
         track->flipY, track->flipX, track->xPos, arrow->yPos);
 }
 
-void update_track(Track *track, bool isBeatFrame) {
+void update_track(Track *track, bool isBeatFrame, int tickCount) {
     if (isBeatFrame) {
         if (track->wait == 0) {
             spawn_arrow(track);
@@ -102,7 +101,7 @@ void update_track(Track *track, bool isBeatFrame) {
     for (int c = 0, idx = track->tail; c < num;
         c++, idx = (idx+1) % NUM_ARROWS_IN_TRACK) {
 
-        update_arrow(&track->arrows[idx]);
+        update_arrow(&track->arrows[idx], tickCount);
     }
 }
 

@@ -38,10 +38,11 @@ void get_input(void* data) {
 void update(void* data) {
     frameCount++;
     bool isBeat = frameCount % VS_PER_TICK == 0;
-    update_track(&tracks[0], isBeat);
-    update_track(&tracks[1], isBeat);
-    update_track(&tracks[2], isBeat);
-    update_track(&tracks[3], isBeat);
+    int tickCount = (frameCount/VS_PER_TICK) % 16;
+    update_track(&tracks[0], isBeat, tickCount);
+    update_track(&tracks[1], isBeat, tickCount);
+    update_track(&tracks[2], isBeat, tickCount);
+    update_track(&tracks[3], isBeat, tickCount);
     if (isBeat) {
         rotate_bg_palette();
     }
@@ -187,16 +188,17 @@ void load_dancer() {
 // Register interupts, init graphics etc...
 void sos_user_game_init() {
     frameCount = 0;
-    init_track(&tracks[0], true, false, true, 5 + 69*0, 0x14, 0, song0, 0, true);
-    init_track(&tracks[1], false, false, false, 5 + 69*1, 0x15, 16, song1, 1, false);
-    init_track(&tracks[2], false, false, true, 5 + 69*2, 0x16, 32, song2, 2, true);
-    init_track(&tracks[3], true, false, false, 5 + 69*3, 0x17, 48, song3, 3, false);
+    init_track(&tracks[0], true, false, true, 5 + 69*0, 0, song0, 0, true);
+    init_track(&tracks[1], false, false, false, 5 + 69*1, 16, song1, 1, false);
+    init_track(&tracks[2], false, false, true, 5 + 69*2, 32, song2, 2, true);
+    init_track(&tracks[3], true, false, false, 5 + 69*3, 48, song3, 3, false);
 
-    // load the arrow into all 16 objects and the first mundane
+    // load the arrow into the first object
     sos_vram_load_grande_chunk(VRAM_INSTANCE_0, arrow);
     // load colors into palette 1
     sos_set_default_color(bg_palette[0]);
     sos_cram_load_palette(0x00, bg_palette+1);
+
     sos_cram_load_palette(0x10, arrow_palette_0);
     sos_cram_load_palette(0x11, arrow_palette_1);
     sos_cram_load_palette(0x12, arrow_palette_2);

@@ -28,12 +28,13 @@
 #define RECEPTOR_PALETTE 2
 #define ACTIVE_PALETTE 3
 #define MISSED_PALETTE 4
+#define ARROW_BASE_PALETTE 0x10
 
 struct __Track;
 
 typedef struct __Arrow {
     int instIndex;
-    int paletteIndex;
+    int paletteOffset;
     int yPos;
 
     bool visible;
@@ -48,7 +49,6 @@ typedef struct __Track {
     bool flipY;
     int xPos;
 
-    int initPalette;
     int baseInstIndex;
 
     uint8_t *song;
@@ -65,9 +65,9 @@ typedef struct __Track {
 } Track;
 
 void init_track(Track *track, bool transpose, bool flipX, bool flipY,
-                int xPos, int initPalette, int baseInstIndex, uint8_t *song,
+                int xPos, int baseInstIndex, uint8_t *song,
                 int receptorOam, bool receptorFlip);
-void update_track(Track *track, bool isBeatFrame);
+void update_track(Track *track, bool isBeatFrame, int tickCount);
 
 void control_track(Track *track, bool isActive);
 
