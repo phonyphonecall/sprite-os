@@ -40,6 +40,23 @@ void sos_vram_load_grande_chunk(uint16_t chunk_num, uint8_t *color_indecies) {
     }
 }
 
+void sos_vram_load_vrende(uint8_t index, uint8_t *sprite) {
+    int offset = (VRAM_MED_0 + 4*index);
+    for (int y = 0; y < 2; y++) {
+        for (int x = 0; x < 2; x++) {
+            for (int row = 0; row < 64; row++) {
+                for (int col = 0; col < 64; col++) {
+                    uint32_t write = ((offset + y*2 + x) << 23) |
+                                     (row << 17) |
+                                     (col << 11) |
+                                     (sprite[y*64*64*2 + x*64 + row*64*2 + col] & 0x0F);
+                    SET_ADDR(VRAM_BASE_ADDR, write);
+                }
+            }
+        }
+    }
+}
+
 void sos_vram_load_venti(uint8_t index, uint8_t *sprite) {
     int offset = (VRAM_LARGE_0 + 16*index);
     for (int y = 0; y < 4; y++) {

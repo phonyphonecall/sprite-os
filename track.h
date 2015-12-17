@@ -28,6 +28,10 @@
 #define RECEPTOR_PALETTE 3
 #define ACTIVE_PALETTE 4
 #define MISSED_PALETTE 5
+#define EASY_PALETTE 6
+#define MEDIUM_PALETTE 7
+#define HARD_PALETTE 8
+#define CHALLENGE_PALETTE 9
 #define ARROW_BASE_PALETTE 0x10
 #define ARROW_BASE_OFFSET (16 - (RESET_TTP % 16))
 
@@ -69,7 +73,7 @@ typedef struct __Track {
 void init_track(Track *track, bool transpose, bool flipX, bool flipY,
                 int xPos, int baseInstIndex, uint8_t *song,
                 int receptorOam, bool receptorFlip);
-void update_track(Track *track, bool isBeatFrame, int tickCount);
+bool update_track(Track *track, bool isBeatFrame, int tickCount);
 
 void control_track(Track *track, bool isActive);
 

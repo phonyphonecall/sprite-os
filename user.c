@@ -11,8 +11,13 @@
 #include "scott2.h"
 #include "background.h"
 #include "receptor.h"
+#include "easy.h"
+#include "medium.h"
+#include "hard.h"
+#include "challenge.h"
 
 #define BG_OAM 0xF0
+#define OAM_MED_0 112
 #define OAM_LARGE_0 120
 
 #define SCREEN_X_MIN 0
@@ -23,14 +28,87 @@
  uint32_t frameCount;
  Track tracks[4];
  uint32_t dancer_mode;
+ bool level_select;
+ bool level_low;
+ bool level_high;
+ int level;
+
+void do_level_select() {
+    // hide receptors
+    sos_oam_set(0, false, RECEPTOR_PALETTE,  false, false, 0, SENSOR_Y_POS);
+    sos_oam_set(1, false, RECEPTOR_PALETTE,  false, false, 0, SENSOR_Y_POS);
+    sos_oam_set(2, false, RECEPTOR_PALETTE,  false, false, 0, SENSOR_Y_POS);
+    sos_oam_set(3, false, RECEPTOR_PALETTE,  false, false, 0, SENSOR_Y_POS);
+
+    sos_set_default_color(0);
+    sos_cram_load_palette(0, bg_black);
+    sos_oam_set(OAM_MED_0, true, EASY_PALETTE, false, false, 32, 128-32);
+    sos_oam_set(OAM_MED_0+1, true, MEDIUM_PALETTE, false, false, 640-128-32, 128-32);
+    sos_oam_set(OAM_MED_0+2, true, HARD_PALETTE, false, false, 32, 256);
+    sos_oam_set(OAM_MED_0+3, true, CHALLENGE_PALETTE, false, false, 640-128-32, 256);
+    sos_oam_set(OAM_LARGE_0, false, 0x01, false, false, 300, 100);
+    sos_oam_set(OAM_LARGE_0+1, true, 0x02, false, true, 320-128, 100);
+    level_select = true;
+    level_low = false;
+    level_high = false;
+}
+
+
+void start_game() {
+    level = (level_high ? 2 : 0) + (level_low ? 1 : 0);
+    frameCount = 0;
+    init_track(&tracks[0], true, false, true, 5 + 69*0, 0, song0[level], 0, true);
+    init_track(&tracks[1], false, false, false, 5 + 69*1, 16, song1[level], 1, false);
+    init_track(&tracks[2], false, false, true, 5 + 69*2, 32, song2[level], 2, true);
+    init_track(&tracks[3], true, false, false, 5 + 69*3, 48, song3[level], 3, false);
+
+    // hide the menu screen, setup dancer
+    sos_oam_set(OAM_MED_0, false, EASY_PALETTE, false, false, 32, 128-32);
+    sos_oam_set(OAM_MED_0+1, false, MEDIUM_PALETTE, false, false, 640-128-32, 128-32);
+    sos_oam_set(OAM_MED_0+2, false, HARD_PALETTE, false, false, 32, 256);
+    sos_oam_set(OAM_MED_0+3, false, CHALLENGE_PALETTE, false, false, 640-128-32, 256);
+    sos_oam_set(OAM_LARGE_0, false, 0x01, false, false, 300, 100);
+    sos_oam_set(OAM_LARGE_0+1, false, 0x02, false, true, 300, 100);
+
+    level_select = false;
+}
 
 void get_input(void* data) {
     sos_input_state_t input;
     sos_fill_input_state(0, &input);
-    control_track(&tracks[0], input.left  | input.aux_d);
-    control_track(&tracks[1], input.down  | input.aux_b);
-    control_track(&tracks[2], input.up    | input.aux_c);
-    control_track(&tracks[3], input.right | input.aux_a);
+    if (level_select) {
+        if (input.aux_a) {
+            start_game();
+        } else {
+            if (input.up) {
+                level_high = false;
+                sos_oam_update(OAM_LARGE_0 + 1,
+                    SOS_OAM_FLIP_Y = false;
+                );
+            } else if (input.down) {
+                level_high = true;
+                sos_oam_update(OAM_LARGE_0 + 1,
+                    SOS_OAM_FLIP_Y = true;
+                );
+            }
+            if (input.left) {
+                level_low = false;
+                sos_oam_update(OAM_LARGE_0 + 1,
+                    SOS_OAM_FLIP_X = true;
+                );
+            } else if (input.right) {
+                level_low = true;
+                sos_oam_update(OAM_LARGE_0 + 1,
+                    SOS_OAM_FLIP_X = false;
+                );
+            }
+        }
+    } else {
+        control_track(&tracks[0], input.left  | input.aux_d);
+        control_track(&tracks[1], input.down  | input.aux_b);
+        control_track(&tracks[2], input.up    | input.aux_c);
+        control_track(&tracks[3], input.right | input.aux_a);
+    }
 }
 
 void update_dancer(int tickCount) {
@@ -65,163 +143,53 @@ void update_dancer(int tickCount) {
 }
 
 void update(void* data) {
-    bool isBeat = frameCount % VS_PER_TICK == 0;
-    int tickCount = (frameCount/VS_PER_TICK) % 16;
-    update_track(&tracks[0], isBeat, tickCount);
-    update_track(&tracks[1], isBeat, tickCount);
-    update_track(&tracks[2], isBeat, tickCount);
-    update_track(&tracks[3], isBeat, tickCount);
-    if (isBeat) {
-        rotate_bg_palette();
-        update_dancer(tickCount);
-    }
-    frameCount++;
-}
-
-static inline void set_bg(uint32_t x, uint32_t y, uint32_t val) {
-    #define BG_CHUNK_START  (192)
-    if (x >= 640 || y >= 480) {
-        sos_uart_printf("Error: Background point out of bounds!");
-        return;
-    }
-
-    uint8_t chunk_x = x / 64;
-    uint8_t chunk_y = y / 64;
-    uint8_t chunk_xPos = x % 64;
-    uint8_t chunk_yPos = y % 64;
-    uint8_t chunk;
-    if (chunk_y == 7) {
-        chunk = 70 + chunk_x/2;
-        if (chunk_x % 2 == 1) {
-            chunk_yPos += 32;
+    if (!level_select) {
+        if (frameCount == 0) {
+            init_background();
         }
-    } else {
-        chunk = chunk_y * 10 + chunk_x;
-    }
-
-    uint32_t write = ((BG_CHUNK_START + chunk) << 23) |
-                     (chunk_yPos << 17) |
-                     (chunk_xPos << 11) |
-                     (val & 0x0F);
-    SET_ADDR(VRAM_BASE_ADDR, write);
-}
-
-void init_background() {
-    sos_uart_printf("Beginning background setup\n");
-    int offset = 0;
-    // draw left triangle of screen
-    for (int band = 0; band < 12; band++, offset += 40) {
-        // draw upper triangle
-        for (int diagonal = offset + 38, count = 1; diagonal >= offset; diagonal -= 2, count++) {
-            for (int y = 0; y < count; y++) {
-                set_bg(diagonal+y, y, band);
-                set_bg(diagonal+y+1, y, band);
-            }
+        bool isBeat = frameCount % VS_PER_TICK == 0;
+        int tickCount = (frameCount/VS_PER_TICK) % 16;
+        bool done = true;
+        done &= update_track(&tracks[0], isBeat, tickCount);
+        done &= update_track(&tracks[1], isBeat, tickCount);
+        done &= update_track(&tracks[2], isBeat, tickCount);
+        done &= update_track(&tracks[3], isBeat, tickCount);
+        if (isBeat) {
+            rotate_bg_palette();
+            update_dancer(tickCount);
         }
+        frameCount++;
 
-        // draw intermediate strip
-        for (int x = offset - 1, count = 1; x >= 0; x--, count++) {
-            for (int y = 0; y < 20; y++) {
-                set_bg(x+y, count+y, band);
-                set_bg(x+y+1, count+y, band);
-            }
-        }
-
-        // draw side triangle
-        for (int count = 0, max_x = 19; count < 40; count += 2, max_x--) {
-            int y = offset + count + 2;
-            set_bg(0, y-1, band);
-            for (int x = 0; x < max_x; x++) {
-                set_bg(x, x+y, band);
-                set_bg(x+1, x+y, band);
-            }
+        if (done) {
+            do_level_select();
         }
     }
-
-    // draw center rhombus
-    for (int band = 12; band < 16; band++, offset += 40) {
-        // draw upper triangle
-        for (int diagonal = offset + 38, count = 1; diagonal >= offset; diagonal -= 2, count++) {
-            for (int y = 0; y < count; y++) {
-                set_bg(diagonal+y, y, band);
-                set_bg(diagonal+y+1, y, band);
-            }
-        }
-
-        // draw intermediate strip
-        for (int x = offset - 1, count = 1; count < 480-20; x--, count++) {
-            for (int y = 0; y < 20; y++) {
-                set_bg(x+y, count+y, band);
-                set_bg(x+y+1, count+y, band);
-            }
-        }
-
-        // draw bottom triangle
-        for (int count = offset - 480 + 20, y = -20; y < 0; count--, y++) {
-            for (int x = 0; x < -y; x++) {
-                set_bg(count+x, 480+x+y, band);
-                set_bg(count+x+1, 480+x+y, band);
-            }
-        }
-    }
-
-    // draw right triangle of screen
-    for (int band = 0; band < 12; band++, offset += 40) {
-        // draw side triangle
-        for (int count = 0; count < 20; count++) {
-            for (int pos = 0; pos < count; pos++) {
-                set_bg(639-count+pos, offset+count+pos-639, band);
-                set_bg(640-count+pos, offset+count+pos-639, band);
-            }
-            set_bg(639, offset-640+count*2+1, band);
-        }
-
-        // draw intermediate strip
-        for (int x = 640 - 20 - 1, count = offset-x; count < 480-20; x--, count++) {
-            for (int y = 0; y < 20; y++) {
-                set_bg(x+y, count+y, band);
-                set_bg(x+y+1, count+y, band);
-            }
-        }
-
-        // draw bottom triangle
-        for (int count = offset - 480 + 20, y = -20; y < 0; count--, y++) {
-            for (int x = 0; x < -y; x++) {
-                set_bg(count+x, 480+x+y, band);
-                set_bg(count+x+1, 480+x+y, band);
-            }
-        }
-    }
-
-    sos_uart_printf("Finished background\n");
 }
 
 void load_dancer() {
     sos_vram_load_venti(0, scott1);
     sos_vram_load_venti(1, scott2);
-    sos_oam_set(OAM_LARGE_0, true, 0x01, false, false, 300, 100);
-    sos_oam_set(OAM_LARGE_0+1, true, 0x02, false, false, 300, 100);
+    sos_cram_load_palette(0x01, scott1_palette);
+    sos_cram_load_palette(0x02, scott2_palette);
 }
 
-// Register interupts, init graphics etc...
-void sos_user_game_init() {
-    frameCount = 0;
-    init_track(&tracks[0], true, false, true, 5 + 69*0, 0, song0, 0, true);
-    init_track(&tracks[1], false, false, false, 5 + 69*1, 16, song1, 1, false);
-    init_track(&tracks[2], false, false, true, 5 + 69*2, 32, song2, 2, true);
-    init_track(&tracks[3], true, false, false, 5 + 69*3, 48, song3, 3, false);
+void load_level_select() {
+    sos_vram_load_vrende(0, easy);
+    sos_vram_load_vrende(1, medium);
+    sos_vram_load_vrende(2, hard);
+    sos_vram_load_vrende(3, challenge);
+    sos_cram_load_palette(EASY_PALETTE, easy_palette);
+    sos_cram_load_palette(MEDIUM_PALETTE, medium_palette);
+    sos_cram_load_palette(HARD_PALETTE, hard_palette);
+    sos_cram_load_palette(CHALLENGE_PALETTE, challenge_palette);
+}
 
+void load_arrows() {
     // load the arrow into all objects
     for (int c = 0; c < 16; c++) {
         sos_vram_load_grande_chunk(VRAM_INSTANCE_0+c, arrow);
     }
     // load colors into palette 1
-    sos_set_default_color(bg_palette[0]);
-    sos_cram_load_palette(0x00, bg_palette+1);
-
-    sos_cram_load_palette(0x01, scott1_palette);
-    sos_cram_load_palette(0x02, scott2_palette);
-
     sos_cram_load_palette(0x10, arrow_palette_0);
     sos_cram_load_palette(0x11, arrow_palette_1);
     sos_cram_load_palette(0x12, arrow_palette_2);
@@ -243,14 +211,19 @@ void sos_user_game_init() {
     sos_cram_load_palette(ACTIVE_PALETTE, active_palette);
     sos_cram_load_palette(MISSED_PALETTE, missed_palette);
 
-    load_dancer();
-
     sos_vram_load_grande_chunk(16, receptor_right);
     sos_vram_load_grande_chunk(17, receptor_down);
     sos_vram_load_grande_chunk(18, receptor_down);
     sos_vram_load_grande_chunk(19, receptor_right);
+}
 
-    //init_background();
+// Register interupts, init graphics etc...
+void sos_user_game_init() {
+    load_dancer();
+    load_level_select();
+    load_arrows();
+
+    do_level_select();
 
     sos_register_vsync_cb(update, NULL, true);
     sos_register_vsync_cb(get_input, NULL, true);

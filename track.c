@@ -86,7 +86,7 @@ void update_arrow(Arrow *arrow, int tickCount) {
         track->flipY, track->flipX, track->xPos, arrow->yPos);
 }
 
-void update_track(Track *track, bool isBeatFrame, int tickCount) {
+bool update_track(Track *track, bool isBeatFrame, int tickCount) {
     if (isBeatFrame) {
         if (track->wait == 0) {
             spawn_arrow(track, tickCount);
@@ -104,6 +104,8 @@ void update_track(Track *track, bool isBeatFrame, int tickCount) {
 
         update_arrow(&track->arrows[idx], tickCount);
     }
+
+    return track->count == 0 && track->wait == 0xFF;
 }
 
 void hit_arrow(Arrow *arrow) {
